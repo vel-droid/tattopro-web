@@ -1,0 +1,174 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Client {
+  id           Int            @id @default(autoincrement())
+  fullName     String
+  phone        String
+  email        String?
+  birthDate    DateTime?
+  notes        String?
+  isBlocked    Boolean        @default(false)
+  noShowCount  Int            @default(0)
+  status       ClientStatus   @default(REGULAR)
+  appointments Appointment[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model Master {
+  id              Int                    @id @default(autoincrement())
+  fullName        String
+  specialization  String?
+  phone           String?
+  isActive        Boolean                @default(true)
+  bio             String?
+  appointments    Appointment[]
+  workingDays     MasterWorkingDay[]
+  dayAvailability MasterDayAvailability[]
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+}
+
+model MasterWorkingDay {
+  id        Int     @id @default(autoincrement())
+  master    Master  @relation(fields: [masterId], references: [id], onDelete: Cascade)
+  masterId  Int
+  weekday   Int     // 0–6, где 0 = воскресенье (или как решишь использовать)
+  startTime String  // "09:00", "10:30" — время в формате HH:MM
+  endTime   String  // "18:00" и т.п.
+  isDayOff  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([masterId, weekday])
+}
+
+model MasterDayAvailability {
+  id        Int     @id @default(autoincrement())
+  master    Master  @relation(fields: [masterId], references: [id], onDelete: Cascade)
+  masterId  Int
+  date      DateTime  // конкретный день (дата без учёта времени по смыслу)
+  startTime String    // "11:00"
+  endTime   String    // "19:00"
+  isDayOff  Boolean   @default(false)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([masterId, date])
+}
+
+model Service {
+  id                     Int             @id @default(autoincrement())
+  name                   String
+  category               ServiceCategory @default(OTHER)
+  basePrice              Int?            // в копейках, можно не заполнять
+  defaultDurationMinutes Int?            // рекомендованная длительность
+  isActive               Boolean         @default(true)
+  notes                  String?
+
+  appointments           Appointment[]
+
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+}
+
+model Appointment {
+  id            Int               @id @default(autoincrement())
+
+  client        Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId      Int
+
+  master        Master            @relation(fields: [masterId], references: [id], onDelete: Cascade)
+  masterId      Int
+
+  service       Service?          @relation(fields: [serviceId], references: [id])
+  serviceId     Int?              // связь на справочник услуг (опционально)
+  serviceName   String            // фактическое описание под клиента
+
+  price         Int
+  startsAt      DateTime
+  endsAt        DateTime
+  status        AppointmentStatus @default(PENDING)
+  notes         String?
+  reminderSent  Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([masterId, startsAt])
+  @@index([clientId])
+  @@index([status])
+  @@index([serviceId])
+}
+
+model InventoryItem {
+  id           Int               @id @default(autoincrement())
+  name         String
+  sku          String?           @unique
+  quantity     Int               @default(0)
+  minQuantity  Int               @default(0)
+  unit         String            // мл, шт, г, и т.п.
+  pricePerUnit Int?              // в копейках/центах, если хочешь считать деньги
+  isActive     Boolean           @default(true)
+  notes        String?
+  category     InventoryCategory @default(CONSUMABLE)
+
+  movements    InventoryMovement[]  // связь с движениями
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model InventoryMovement {
+  id        Int           @id @default(autoincrement())
+  item      InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId    Int
+  type      MovementType
+  quantity  Int           // насколько изменили (плюс или минус)
+  reason    String?
+  createdAt DateTime      @default(now())
+}
+
+enum AppointmentStatus {
+  PENDING
+  APPROVED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum ClientStatus {
+  REGULAR
+  VIP
+  RISK
+}
+
+enum InventoryCategory {
+  CONSUMABLE
+  JEWELRY
+  AFTERCARE
+  EQUIPMENT
+  OTHER
+}
+
+enum MovementType {
+  IN      // приход: закупка, возврат
+  OUT     // расход: использование на сеансы, списание
+  ADJUST  // корректировка: инвентаризация
+}
+
+enum ServiceCategory {
+  TATTOO
+  PIERCING
+  BEAUTY
+  CONSULTATION
+  OTHER
+}
