@@ -7,6 +7,7 @@ import { ru } from "date-fns/locale";
 
 import type { ServiceCategory } from "@/app/lib/types";
 import { ReportsApi, MasterApi } from "@/app/lib/api";
+import ToastContainer, { type ToastItem } from "@/app/components/Toast";
 
 type Master = {
   id: number;
@@ -74,6 +75,19 @@ export default function ServicesReportPage() {
   const [mastersLoading, setMastersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [toastItems, setToastItems] = useState<ToastItem[]>([]);
+
+  function pushToast(item: Omit<ToastItem, "id">) {
+    setToastItems((prev) => [
+      ...prev,
+      { id: Date.now().toString(), ...item },
+    ]);
+  }
+
+  function handleRemoveToast(id: string) {
+    setToastItems((prev) => prev.filter((t) => t.id !== id));
+  }
+
   const buildRange = () => {
     let fromIso: string | undefined;
     let toIso: string | undefined;
@@ -89,8 +103,12 @@ export default function ServicesReportPage() {
       setMastersLoading(true);
       const res = (await MasterApi.getAll()) as any;
       setMasters(res as Master[]);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      pushToast({
+        type: "error",
+        message: e.message ?? "Не удалось загрузить список мастеров",
+      });
     } finally {
       setMastersLoading(false);
     }
@@ -132,7 +150,12 @@ export default function ServicesReportPage() {
       setData(resp as ServicesRevenueResponse);
     } catch (e: any) {
       console.error(e);
-      setError(e.message || "Ошибка загрузки отчёта по услугам");
+      const msg = e.message || "Ошибка загрузки отчёта по услугам";
+      setError(msg);
+      pushToast({
+        type: "error",
+        message: msg,
+      });
     } finally {
       setLoading(false);
     }
@@ -191,7 +214,7 @@ export default function ServicesReportPage() {
                 Фильтры отчёта по услугам.
               </span>
             </div>
-            <div className="ml-auto flex flex-wrap items-end gap-4">
+            <div className="ml-auto flex flex-wrap items_end gap-4">
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-500">
                   С даты
@@ -297,7 +320,7 @@ export default function ServicesReportPage() {
           </div>
         </section>
 
-        <section className="space-y-2 rounded bg-white p-4 shadow">
+        <section className="space-y-2 rounded bg_white p-4 shadow">
           <h2 className="text-sm font-semibold text-gray-800">
             Услуги
           </h2>
@@ -432,6 +455,8 @@ export default function ServicesReportPage() {
           ) : null}
         </section>
       </main>
+
+      <ToastContainer toasts={toastItems} onClose={handleRemoveToast} />
     </div>
   );
 }

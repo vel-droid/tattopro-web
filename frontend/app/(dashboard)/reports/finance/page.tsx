@@ -374,14 +374,13 @@ export default function FinanceReportsPage() {
           </div>
           <div className="flex items-center gap-2">
             <button
-  type="button"
-  onClick={handleExportFinance}
-  disabled={!from || !to}
-  className="rounded border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 md:text-sm"
->
-  Экспорт записей и расходников (CSV)
-</button>
-
+              type="button"
+              onClick={handleExportFinance}
+              disabled={!from || !to}
+              className="rounded border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 md:text-sm"
+            >
+              Экспорт записей и расходников (CSV)
+            </button>
           </div>
         </div>
       </header>

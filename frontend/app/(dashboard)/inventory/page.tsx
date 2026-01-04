@@ -43,7 +43,7 @@ export default function InventoryPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] =
     useState<InventoryCategory | "ALL">("ALL");
-  const [adjustValues, setAdjustValues] = useState<Record<number, string>>([]);
+  const [adjustValues, setAdjustValues] = useState<Record<number, string>>({});
   const [toastItems, setToastItems] = useState<ToastItem[]>([]);
 
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
@@ -916,7 +916,7 @@ export default function InventoryPage() {
         )}
       </section>
 
-      <ToastContainer items={toastItems} onRemove={handleRemoveToast} />
+      <ToastContainer toasts={toastItems} onClose={handleRemoveToast} />
     </div>
   );
 }

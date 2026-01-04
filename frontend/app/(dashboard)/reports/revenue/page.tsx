@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { ReportsApi, AppointmentApi } from "../../../lib/api";
-import type { RevenueReportResponse, Appointment } from "../../../lib/types";
+import type {
+  RevenueReportResponse,
+  Appointment,
+  AppointmentListResponse,
+} from "../../../lib/types";
 
 function formatMoney(value: number) {
   return value.toLocaleString("ru-RU", {
@@ -34,7 +38,9 @@ export default function RevenueReportPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [report, setReport] = useState<RevenueReportResponse | null>(null);
-  const [completedAppointments, setCompletedAppointments] = useState<Appointment[]>([]);
+  const [completedAppointments, setCompletedAppointments] = useState<
+    Appointment[]
+  >([]);
 
   async function handleLoad() {
     if (!from || !to) {
@@ -56,8 +62,11 @@ export default function RevenueReportPage() {
         }),
       ]);
 
+      const list = appointmentsRes as AppointmentListResponse;
+      const items = list.data?.items ?? [];
+
       setReport(rev);
-      setCompletedAppointments(appointmentsRes.items);
+      setCompletedAppointments(items);
     } catch (e: any) {
       const msg = e?.message ?? "Не удалось загрузить отчёт по выручке";
       if (msg.includes("range") || msg.includes("диапазон")) {
@@ -171,7 +180,9 @@ export default function RevenueReportPage() {
                   {report.items.map((item) => (
                     <tr key={item.masterId}>
                       <td className="px-4 py-2">{item.masterName}</td>
-                      <td className="px-4 py-2 text-right">{item.count}</td>
+                      <td className="px-4 py-2 text-right">
+                        {item.count}
+                      </td>
                       <td className="px-4 py-2 text-right">
                         {formatMoney(item.revenue)}
                       </td>
@@ -188,7 +199,7 @@ export default function RevenueReportPage() {
       {report && (
         <section className="rounded-lg border bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-medium">
+            <h2 className="text-lg font_medium">
               Завершённые записи за период
             </h2>
             <div className="text-sm text-gray-500">

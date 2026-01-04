@@ -1,435 +1,277 @@
+// app/(dashboard)/clients/page.tsx
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { format } from "date-fns";
 
-import type { Client, ClientStatus } from "../../lib/types";
-import { ClientApi } from "../../lib/api";
+import {
+  ClientApi,
+} from "../../lib/api";
+import type {
+  Client,
+  ClientStatus,
+} from "../../lib/types";
 import ToastContainer, { type ToastItem } from "../../components/Toast";
 
-const statusLabels: Record<ClientStatus, string> = {
-  REGULAR: "REGULAR",
-  VIP: "VIP",
-  RISK: "RISK",
-};
-
-type FormState = {
-  fullName: string;
-  phone: string;
-  email: string;
-  status: ClientStatus;
-  notes: string;
-  birthDate: string; // YYYY-MM-DD
-};
-
-const emptyForm: FormState = {
-  fullName: "",
-  phone: "",
-  email: "",
-  status: "REGULAR",
-  notes: "",
-  birthDate: "",
+type FilterState = {
+  search?: string;
+  status?: ClientStatus | "ALL";
 };
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState<FormState>(emptyForm);
-  const [editingClientId, setEditingClientId] = useState<number | null>(null);
+
+  const [filters, setFilters] = useState<FilterState>({
+    search: "",
+    status: "ALL",
+  });
+
   const [toastItems, setToastItems] = useState<ToastItem[]>([]);
+
+  const loadClients = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await ClientApi.getAll();
+      setClients(data);
+    } catch (e: any) {
+      console.error(e);
+      const msg = e.message || "Не удалось загрузить клиентов";
+      setError(msg);
+      showError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     void loadClients();
   }, []);
 
-  function pushToast(item: Omit<ToastItem, "id">) {
-    setToastItems((prev) => [
-      ...prev,
-      { id: Date.now().toString(), ...item },
-    ]);
-  }
+  const showToast = (type: "success" | "error", message: string) => {
+    const id = Date.now().toString();
+    setToastItems((prev) => [...prev, { id, type, message }]);
+    setTimeout(() => {
+      setToastItems((prev) => prev.filter((t) => t.id !== id));
+    }, 4000);
+  };
 
-  function handleRemoveToast(id: string) {
+  const showSuccess = (message: string) => showToast("success", message);
+  const showError = (message: string) => showToast("error", message);
+
+  const handleRemoveToast = (id: string) => {
     setToastItems((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const handleStatusChange = async (client: Client, status: ClientStatus) => {
+  try {
+    await ClientApi.update(client.id, { status });
+    showSuccess("Статус клиента обновлён");
+    await loadClients();
+  } catch (e: any) {
+    console.error(e);
+    showError(e.message || "Ошибка обновления статуса клиента");
   }
+};
 
-  async function loadClients() {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await ClientApi.getAll();
-      setClients(data);
-    } catch (e: any) {
-      setError(e.message ?? "Не удалось загрузить клиентов");
-    } finally {
-      setLoading(false);
-    }
+  const handleBlockToggle = async (client: Client) => {
+  try {
+    await ClientApi.update(client.id, { isBlocked: !client.isBlocked });
+    showSuccess(
+      client.isBlocked ? "Клиент разблокирован" : "Клиент заблокирован",
+    );
+    await loadClients();
+  } catch (e: any) {
+    console.error(e);
+    showError(e.message || "Ошибка изменения блокировки клиента");
   }
+};
 
-  function handleChange(field: keyof FormState, value: string) {
-    setForm((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  }
+  const filteredClients = useMemo(() => {
+    return clients.filter((c) => {
+      const byStatus =
+        !filters.status || filters.status === "ALL"
+          ? true
+          : c.status === filters.status;
 
-  function resetForm() {
-    setForm(emptyForm);
-    setEditingClientId(null);
-  }
+      const search = filters.search?.trim().toLowerCase() ?? "";
+      const bySearch = !search
+        ? true
+        : c.fullName.toLowerCase().includes(search) ||
+          (c.phone ?? "").toLowerCase().includes(search) ||
+          (c.email ?? "").toLowerCase().includes(search);
 
-  function handleEditClient(client: Client) {
-    setEditingClientId(client.id);
-
-    let birthDate = "";
-    if (client.birthDate) {
-      const d = new Date(client.birthDate);
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const dd = String(d.getDate()).padStart(2, "0");
-      birthDate = `${yyyy}-${mm}-${dd}`;
-    }
-
-    setForm({
-      fullName: client.fullName ?? "",
-      phone: client.phone ?? "",
-      email: client.email ?? "",
-      status: client.status,
-      notes: client.notes ?? "",
-      birthDate,
+      return byStatus && bySearch;
     });
-  }
-
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault();
-    if (!form.fullName.trim() || !form.phone.trim()) {
-      pushToast({
-        type: "error",
-        message: "ФИО и телефон обязательны",
-      });
-      return;
-    }
-
-    try {
-      setSaving(true);
-
-      const payload: any = {
-        fullName: form.fullName.trim(),
-        phone: form.phone.trim(),
-        email: form.email.trim() || null,
-        status: form.status,
-        notes: form.notes.trim() || null,
-      };
-
-      if (form.birthDate) {
-        payload.birthDate = new Date(form.birthDate).toISOString();
-      }
-
-      if (editingClientId == null) {
-        const created = await ClientApi.create(payload);
-        setClients((prev) => [created, ...prev]);
-        pushToast({
-          type: "success",
-          message: "Клиент создан",
-        });
-      } else {
-        const updated = await ClientApi.update(editingClientId, payload);
-        setClients((prev) =>
-          prev.map((c) => (c.id === updated.id ? updated : c)),
-        );
-        pushToast({
-          type: "success",
-          message: "Клиент обновлён",
-        });
-      }
-
-      resetForm();
-    } catch (e: any) {
-      pushToast({
-        type: "error",
-        message:
-          e.message ??
-          (editingClientId == null
-            ? "Не удалось создать клиента"
-            : "Не удалось обновить клиента"),
-      });
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const hasClients = clients.length > 0;
+  }, [clients, filters]);
 
   return (
-    <div className="space-y-6">
-      {/* Заголовок */}
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Клиенты
-          </h1>
-          <p className="text-sm text-gray-500">
-            Создание и список клиентов студии. Клиенты также добавляются
-            автоматически при создании записей.
-          </p>
-        </div>
-        <Link
-          href="/appointments"
-          className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-        >
-          К записям
-        </Link>
-      </div>
-
-      {/* Форма создания / редактирования клиента */}
-      <section className="rounded-lg border bg-white p-4 shadow-sm">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-medium">
-            {editingClientId == null
-              ? "Добавить клиента"
-              : "Редактировать клиента"}
-          </h2>
-          {editingClientId != null && (
-            <button
-              type="button"
-              onClick={resetForm}
-              className="text-xs text-gray-500 hover:text-gray-700"
+    <div className="min-h-screen bg-gray-100">
+      {/* Header */}
+      <header className="bg-white shadow">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
+          <div className="flex items-center gap-4">
+            <h1 className="text-xl font-semibold text-gray-900">Клиенты</h1>
+            <Link
+              href="/dashboard"
+              className="text-sm text-blue-600 hover:text-blue-700"
             >
-              Сбросить форму
-            </button>
-          )}
-        </div>
-
-        <form
-          className="grid gap-4 md:grid-cols-2"
-          onSubmit={handleSubmit}
-        >
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-gray-700">
-              ФИО *
-            </label>
+              ← Назад к дашборду
+            </Link>
+          </div>
+          <div className="flex items-center gap-3">
             <input
               type="text"
-              className="mt-1 block w-full rounded-md border px-2 py-1 text-sm"
-              value={form.fullName}
-              onChange={(e) => handleChange("fullName", e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-gray-700">
-              Телефон *
-            </label>
-            <input
-              type="tel"
-              className="mt-1 block w-full rounded-md border px-2 py-1 text-sm"
-              value={form.phone}
-              onChange={(e) => handleChange("phone", e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              type="email"
-              className="mt-1 block w-full rounded-md border px-2 py-1 text-sm"
-              value={form.email}
-              onChange={(e) => handleChange("email", e.target.value)}
-            />
-          </div>
-
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-gray-700">
-              Дата рождения
-            </label>
-            <input
-              type="date"
-              className="mt-1 block w-full rounded-md border px-2 py-1 text-sm"
-              value={form.birthDate}
-              onChange={(e) => handleChange("birthDate", e.target.value)}
-            />
-          </div>
-
-          <div className="md:col-span-1">
-            <label className="block text-sm font-medium text-gray-700">
-              Статус
-            </label>
-            <select
-              className="mt-1 block w-full rounded-md border px-2 py-1 text-sm"
-              value={form.status}
+              placeholder="Поиск по имени, телефону, email"
+              value={filters.search ?? ""}
               onChange={(e) =>
-                handleChange("status", e.target.value as ClientStatus)
+                setFilters((prev) => ({ ...prev, search: e.target.value }))
               }
+              className="w-64 rounded border px-3 py-2 text-sm"
+            />
+            <select
+              value={filters.status ?? "ALL"}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  status: e.target.value as ClientStatus | "ALL",
+                }))
+              }
+              className="min-w-[140px] rounded border px-3 py-2 text-sm"
             >
-              <option value="REGULAR">REGULAR</option>
+              <option value="ALL">Все</option>
+              <option value="REGULAR">Обычный</option>
               <option value="VIP">VIP</option>
-              <option value="RISK">RISK</option>
+              <option value="RISK">Риск</option>
             </select>
           </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Заметки
-            </label>
-            <textarea
-              className="mt-1 block w-full rounded-md border px-2 py-1 text-sm"
-              rows={3}
-              value={form.notes}
-              onChange={(e) => handleChange("notes", e.target.value)}
-              placeholder="Аллергии, предпочтения, кто рекомендовал и т.п."
-            />
-          </div>
-
-          <div className="md:col-span-2 flex justify-end gap-3">
-            {editingClientId != null && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="rounded-md border px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-              >
-                Отмена
-              </button>
-            )}
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex items-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-60"
-            >
-              {saving
-                ? "Сохраняем..."
-                : editingClientId == null
-                ? "Добавить клиента"
-                : "Сохранить изменения"}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      {/* Ошибки загрузки */}
-      {error && (
-        <div className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">
-          {error}
         </div>
-      )}
+      </header>
 
-      {/* Таблица клиентов */}
-      <section className="rounded-lg border bg-white p-4 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-medium">Все клиенты</h2>
-          {loading && (
-            <span className="text-xs text-gray-500">Загрузка…</span>
-          )}
-        </div>
-
-        {!hasClients && !loading ? (
-          <div className="rounded border border-dashed bg-white px-4 py-6 text-sm text-gray-500">
-            Пока нет клиентов в базе. Добавьте клиента через форму выше или
-            создайте запись — клиент появится автоматически.
+      {/* Main */}
+      <main className="mx-auto max-w-7xl px-4 py-6 space-y-4">
+        {error && (
+          <div className="rounded bg-red-100 px-4 py-2 text-sm text-red-700">
+            {error}
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
+        )}
+
+        <section className="overflow-x-auto rounded-lg bg-white shadow">
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-3 py-2 text-left font-medium text-gray-700">
+                  Имя
+                </th>
+                <th className="px-3 py-2 text-left font-medium text-gray-700">
+                  Телефон
+                </th>
+                <th className="px-3 py-2 text-left font-medium text-gray-700">
+                  Email
+                </th>
+                <th className="px-3 py-2 text-left font-medium text-gray-700">
+                  Статус
+                </th>
+                <th className="px-3 py-2 text-left font-medium text-gray-700">
+                  No-show
+                </th>
+                <th className="px-3 py-2 text-left font-medium text-gray-700">
+                  Заметки
+                </th>
+                <th className="px-3 py-2 text-right font-medium text-gray-700">
+                  Действия
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {loading && (
                 <tr>
-                  <th className="px-4 py-2 text-left font-medium text-gray-700">
-                    Имя
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-700">
-                    Email
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-700">
-                    Телефон
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-700">
-                    Статус
-                  </th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-700">
-                    Active
-                  </th>
-                  <th className="px-4 py-2 text-right font-medium text-gray-700">
-                    No‑show
-                  </th>
-                  <th className="px-4 py-2 text-right font-medium text-gray-700">
-                    Действия
-                  </th>
+                  <td
+                    colSpan={7}
+                    className="px-3 py-4 text-center text-sm text-gray-500"
+                  >
+                    Загрузка...
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
-                {clients.map((client) => (
+              )}
+
+              {!loading && filteredClients.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={7}
+                    className="px-3 py-4 text-center text-sm text-gray-500"
+                  >
+                    Клиентов по текущим фильтрам не найдено.
+                  </td>
+                </tr>
+              )}
+
+              {!loading &&
+                filteredClients.map((client) => (
                   <tr key={client.id}>
-                    <td className="px-4 py-2">
+                    <td className="px-3 py-2">
                       <div className="font-medium text-gray-900">
                         {client.fullName}
                       </div>
-                      {client.notes && (
-                        <div className="text-xs text-gray-500">
-                          {client.notes}
-                        </div>
-                      )}
+                      <div className="text-xs text-gray-500">
+                        ID: {client.id}
+                      </div>
                     </td>
-                    <td className="px-4 py-2 text-gray-700">
-                      {client.email ?? "—"}
+                    <td className="px-3 py-2">{client.phone}</td>
+                    <td className="px-3 py-2">{client.email}</td>
+                    <td className="px-3 py-2">
+                      {client.status === "REGULAR"
+                        ? "Обычный"
+                        : client.status === "VIP"
+                        ? "VIP"
+                        : "Риск"}
                     </td>
-                    <td className="px-4 py-2 text-gray-700">
-                      {client.phone}
-                    </td>
-                    <td className="px-4 py-2">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          client.status === "VIP"
-                            ? "bg-green-100 text-green-800"
-                            : client.status === "RISK"
-                            ? "bg-red-100 text-red-800"
-                            : "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        {statusLabels[client.status]}
+                    <td className="px-3 py-2">{client.noShowCount}</td>
+                    <td className="px-3 py-2 max-w-xs">
+                      <span className="line-clamp-2 text-xs text-gray-600">
+                        {client.notes}
                       </span>
                     </td>
-                    <td className="px-4 py-2">
-                      {client.isBlocked ? (
-                        <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-                          inactive
-                        </span>
-                      ) : (
-                        <span className="inline-flex rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                          active
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2 text-right">
-                      {client.noShowCount && client.noShowCount > 0 ? (
-                        <span className="inline-flex rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
-                          {client.noShowCount}
-                        </span>
-                      ) : (
-                        "0"
-                      )}
-                    </td>
-                    <td className="px-4 py-2 text-right">
-                      <button
-                        type="button"
-                        onClick={() => handleEditClient(client)}
-                        className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
-                      >
-                        Редактировать
-                      </button>
+                    <td className="px-3 py-2 text-right">
+                      <div className="flex justify-end gap-2">
+                        <select
+                          value={client.status}
+                          onChange={(e) =>
+                            void handleStatusChange(
+                              client,
+                              e.target.value as ClientStatus,
+                            )
+                          }
+                          className="rounded border px-2 py-1 text-xs"
+                        >
+                          <option value="REGULAR">Обычный</option>
+                          <option value="VIP">VIP</option>
+                          <option value="RISK">Риск</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => void handleBlockToggle(client)}
+                          className={`rounded px-2 py-1 text-xs ${
+                            client.isBlocked
+                              ? "bg-green-600 text-white"
+                              : "bg-red-600 text-white"
+                          }`}
+                        >
+                          {client.isBlocked ? "Разблокировать" : "Заблокировать"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+            </tbody>
+          </table>
+        </section>
+      </main>
 
-      <ToastContainer items={toastItems} onRemove={handleRemoveToast} />
+      <ToastContainer toasts={toastItems} onClose={handleRemoveToast} />
     </div>
   );
 }

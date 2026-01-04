@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { Master } from "../../lib/types";
 import { MasterApi } from "../../lib/api";
+import ToastContainer, { type ToastItem } from "../../components/Toast";
 
 type DayAvailability = {
   date: string; // ISO без времени
@@ -87,12 +88,32 @@ export default function MastersPage() {
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
   const [isSavingAvailability, setIsSavingAvailability] = useState(false);
 
+  const [toastItems, setToastItems] = useState<ToastItem[]>([]);
+
+  function pushToast(item: Omit<ToastItem, "id">) {
+    setToastItems((prev) => [
+      ...prev,
+      { id: Date.now().toString(), ...item },
+    ]);
+  }
+
+  function handleRemoveToast(id: string) {
+    setToastItems((prev) => prev.filter((t) => t.id !== id));
+  }
+
   useEffect(() => {
-    (async () => {
-      const data = await MasterApi.getAll();
-      setMasters(data);
-      if (data.length > 0) {
-        setSelectedMasterId(data[0].id);
+    void (async () => {
+      try {
+        const data = await MasterApi.getAll();
+        setMasters(data);
+        if (data.length > 0) {
+          setSelectedMasterId(data[0].id);
+        }
+      } catch (e: any) {
+        pushToast({
+          type: "error",
+          message: e.message ?? "Не удалось загрузить мастеров",
+        });
       }
     })();
   }, []);
@@ -142,6 +163,10 @@ export default function MastersPage() {
           console.error("Failed to load day availability", json.error);
           setDayAvailability({});
           setSelectedDate(null);
+          pushToast({
+            type: "error",
+            message: json.error ?? "Не удалось загрузить график по дням",
+          });
           return;
         }
 
@@ -165,16 +190,20 @@ export default function MastersPage() {
 
         setDayAvailability(map);
         setSelectedDate(null);
-      } catch (e) {
+      } catch (e: any) {
         console.error("Error loading day availability", e);
         setDayAvailability({});
         setSelectedDate(null);
+        pushToast({
+          type: "error",
+          message: e.message ?? "Ошибка при загрузке графика по дням",
+        });
       } finally {
         setIsLoadingAvailability(false);
       }
     };
 
-    loadAvailability();
+    void loadAvailability();
   }, [selectedMasterId, monthRange.from, monthRange.to]);
 
   const handleChange = (
@@ -200,7 +229,10 @@ export default function MastersPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.fullName.trim()) {
-      alert("Имя мастера обязательно");
+      pushToast({
+        type: "error",
+        message: "Имя мастера обязательно",
+      });
       return;
     }
 
@@ -212,23 +244,42 @@ export default function MastersPage() {
       bio: form.bio || undefined,
     };
 
-    if (editingMaster) {
-      const updated = await MasterApi.update(editingMaster.id, payload);
-      setMasters((prev) =>
-        prev.map((m) => (m.id === updated.id ? updated : m)),
-      );
-      if (selectedMasterId === editingMaster.id) {
-        setSelectedMasterId(updated.id);
+    try {
+      if (editingMaster) {
+        const updated = await MasterApi.update(editingMaster.id, payload);
+        setMasters((prev) =>
+          prev.map((m) => (m.id === updated.id ? updated : m)),
+        );
+        if (selectedMasterId === editingMaster.id) {
+          setSelectedMasterId(updated.id);
+        }
+        pushToast({
+          type: "success",
+          message: "Мастер обновлён",
+        });
+      } else {
+        const created = await MasterApi.create(payload);
+        setMasters((prev) => [created, ...prev]);
+        if (!selectedMasterId) {
+          setSelectedMasterId(created.id);
+        }
+        pushToast({
+          type: "success",
+          message: "Мастер создан",
+        });
       }
-    } else {
-      const created = await MasterApi.create(payload);
-      setMasters((prev) => [created, ...prev]);
-      if (!selectedMasterId) {
-        setSelectedMasterId(created.id);
-      }
-    }
 
-    resetForm();
+      resetForm();
+    } catch (e: any) {
+      pushToast({
+        type: "error",
+        message:
+          e.message ??
+          (editingMaster
+            ? "Не удалось обновить мастера"
+            : "Не удалось создать мастера"),
+      });
+    }
   };
 
   const handleEdit = (master: Master) => {
@@ -244,16 +295,27 @@ export default function MastersPage() {
 
   const handleDelete = async (id: number) => {
     if (!confirm("Удалить мастера?")) return;
-    await MasterApi.remove(id);
-    setMasters((prev) => prev.filter((m) => m.id !== id));
-    if (editingMaster && editingMaster.id === id) {
-      resetForm();
-    }
-    if (selectedMasterId === id) {
-      const remaining = masters.filter((m) => m.id !== id);
-      setSelectedMasterId(remaining.length ? remaining[0].id : null);
-      setDayAvailability({});
-      setSelectedDate(null);
+    try {
+      await MasterApi.delete(id);
+      setMasters((prev) => prev.filter((m) => m.id !== id));
+      if (editingMaster && editingMaster.id === id) {
+        resetForm();
+      }
+      if (selectedMasterId === id) {
+        const remaining = masters.filter((m) => m.id !== id);
+        setSelectedMasterId(remaining.length ? remaining[0].id : null);
+        setDayAvailability({});
+        setSelectedDate(null);
+      }
+      pushToast({
+        type: "success",
+        message: "Мастер удалён",
+      });
+    } catch (e: any) {
+      pushToast({
+        type: "error",
+        message: e.message ?? "Не удалось удалить мастера",
+      });
     }
   };
 
@@ -391,14 +453,23 @@ export default function MastersPage() {
 
       const json = await res.json();
       if (!json.success) {
-        alert(json.error || "Не удалось сохранить график по дням");
+        pushToast({
+          type: "error",
+          message: json.error || "Не удалось сохранить график по дням",
+        });
         return;
       }
 
-      alert("Месячный график сохранён");
-    } catch (e) {
+      pushToast({
+        type: "success",
+        message: "Месячный график сохранён",
+      });
+    } catch (e: any) {
       console.error("Error saving day availability", e);
-      alert("Ошибка при сохранении месячного графика");
+      pushToast({
+        type: "error",
+        message: e.message ?? "Ошибка при сохранении месячного графика",
+      });
     } finally {
       setIsSavingAvailability(false);
     }
@@ -468,7 +539,9 @@ export default function MastersPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium">Телефон</label>
+              <label className="mb-1 block text-sm font-medium">
+                Телефон
+              </label>
               <input
                 type="text"
                 name="phone"
@@ -598,7 +671,7 @@ export default function MastersPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDelete(master.id);
+                        void handleDelete(master.id);
                       }}
                       className="text-xs text-red-600 hover:underline"
                     >
@@ -637,7 +710,9 @@ export default function MastersPage() {
             {currentMaster && (
               <span className="text-sm text-gray-600">
                 Мастер:{" "}
-                <span className="font-semibold">{currentMaster.fullName}</span>
+                <span className="font-semibold">
+                  {currentMaster.fullName}
+                </span>
               </span>
             )}
           </div>
@@ -819,6 +894,8 @@ export default function MastersPage() {
           )}
         </section>
       </main>
+
+      <ToastContainer toasts={toastItems} onClose={handleRemoveToast} />
     </div>
   );
 }

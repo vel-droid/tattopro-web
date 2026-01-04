@@ -2,9 +2,26 @@
 
 import { useEffect, useState, FormEvent } from "react";
 
-import type { Profile, UserRole } from "../../lib/types";
 import { loadProfile, saveProfile } from "../../lib/storage";
 import ToastContainer, { type ToastItem } from "../../components/Toast";
+
+// Локальные типы профиля и роли
+type UserRole = "admin" | "master";
+
+type Profile = {
+  name: string;
+  studioName: string;
+  bio: string;
+  phone: string;
+  email: string;
+  vk: string;
+  telegram: string;
+  instagram: string;
+  currency: "RUB" | "USD" | "EUR";
+  locale: "ru-RU" | "en-US";
+  timeZone: string;
+  role: UserRole;
+};
 
 const defaultProfile: Profile = {
   name: "",
@@ -318,7 +335,7 @@ export default function ProfilePage() {
         </form>
       </section>
 
-      <ToastContainer items={toastItems} onRemove={handleRemoveToast} />
+      <ToastContainer toasts={toastItems} onClose={handleRemoveToast} />
     </div>
   );
 }

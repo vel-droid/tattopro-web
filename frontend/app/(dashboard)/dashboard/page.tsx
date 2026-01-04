@@ -1,3 +1,4 @@
+// app/(dashboard)/dashboard/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -12,6 +13,7 @@ import type {
   AppointmentStatsResponse,
   Master,
   LowStockResponse,
+  AppointmentListResponse,
 } from "../../lib/types";
 import {
   ClientApi,
@@ -118,7 +120,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [toastItems, setToastItems] = useState<ToastItem[]>([]);
 
-  // диапазон для KPI (как было)
+  // диапазон для KPI
   const kpiRange = useMemo(() => {
     const now = new Date();
     if (rangePreset === "today") {
@@ -171,7 +173,7 @@ export default function DashboardPage() {
     [calendarAppointments, selectedDate],
   );
 
-  // сегодня — тоже лучше считать по календарным данным, чтобы не зависеть от пресета
+  // сегодня по календарным данным
   const todayAppointments = useMemo(
     () =>
       calendarAppointments.filter((a) =>
@@ -233,10 +235,16 @@ export default function DashboardPage() {
         paramsForStats.masterId = selectedMasterId;
       }
 
-      const [appointmentsData, statsData] = await Promise.all([
+      const [appointmentsDataRaw, statsData] = await Promise.all([
         AppointmentApi.getAppointments(paramsForAppointments),
         AppointmentApi.getStats(paramsForStats),
       ]);
+
+      const appointmentsData =
+        (appointmentsDataRaw as AppointmentListResponse).data ?? {
+          items: [],
+          total: 0,
+        };
 
       setPeriodAppointments(appointmentsData.items);
       setStats(statsData);
@@ -263,7 +271,10 @@ export default function DashboardPage() {
         params.masterId = selectedMasterId;
       }
 
-      const res = await AppointmentApi.getAppointments(params);
+      const resRaw = await AppointmentApi.getAppointments(params);
+      const res =
+        (resRaw as AppointmentListResponse).data ?? { items: [], total: 0 };
+
       setCalendarAppointments(res.items);
     } catch (e: any) {
       pushToast({
@@ -273,8 +284,11 @@ export default function DashboardPage() {
     }
   }
 
-  function pushToast(item: ToastItem) {
-    setToastItems((prev) => [...prev, { id: Date.now().toString(), ...item }]);
+  function pushToast(item: Omit<ToastItem, "id">) {
+    setToastItems((prev) => [
+      ...prev,
+      { id: Date.now().toString(), ...item },
+    ]);
   }
 
   function handleRemoveToast(id: string) {
@@ -331,8 +345,9 @@ export default function DashboardPage() {
     try {
       const created = await AppointmentApi.createAppointment(data);
 
-      // запись попадает в календарный месяц?
       const createdDate = new Date(created.startsAt);
+
+      // запись попадает в календарный месяц?
       if (
         createdDate >= calendarRange.from &&
         createdDate <= calendarRange.to
@@ -499,7 +514,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* Основной контент: быстрый обзор + список + форма + календарь */}
+      {/* Основной контент: обзор + список + форма + календарь */}
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <section className="space-y-4">
           <div className="rounded-lg border bg-white p-4 shadow-sm">
@@ -524,11 +539,10 @@ export default function DashboardPage() {
               <div>
                 <div className="text-gray-500">Выручка сегодня</div>
                 <div className="mt-1 text-xl font-semibold">
-                  {(
-                    todayAppointments
-                      .filter((a) => a.status === "COMPLETED")
-                      .reduce((sum, a) => sum + a.price, 0)
-                  ).toFixed(2)}{" "}
+                  {todayAppointments
+                    .filter((a) => a.status === "COMPLETED")
+                    .reduce((sum, a) => sum + a.price, 0)
+                    .toFixed(2)}{" "}
                   ₽
                 </div>
               </div>
@@ -618,15 +632,14 @@ export default function DashboardPage() {
 
         <section className="rounded-lg border bg-white p-4 shadow-sm">
           <h2 className="mb-3 text-lg font-medium">Календарь</h2>
-          <DashboardCalendar
-            appointments={calendarAppointments}
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-          />
+<DashboardCalendar
+  appointments={calendarAppointments}
+  onSelectDate={setSelectedDate}
+/>
         </section>
       </div>
 
-      <ToastContainer items={toastItems} onRemove={handleRemoveToast} />
+      <ToastContainer toasts={toastItems} onClose={handleRemoveToast} />
     </div>
   );
 }

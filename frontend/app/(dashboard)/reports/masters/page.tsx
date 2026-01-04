@@ -33,9 +33,7 @@ export default function MastersReportPage() {
     d.setDate(1);
     return format(d, "yyyy-MM-dd");
   });
-  const [to, setTo] = useState<string>(() =>
-    format(new Date(), "yyyy-MM-dd"),
-  );
+  const [to, setTo] = useState<string>(() => format(new Date(), "yyyy-MM-dd"));
   const [statusMode, setStatusMode] = useState<StatusFilter>("ACTIVE_ONLY");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +78,7 @@ export default function MastersReportPage() {
 
       const rowsResult: MasterRow[] = [];
 
-      // для простоты: один запрос /api/appointments на мастера
+      // один запрос /api/appointments на мастера
       for (const m of usedMasters) {
         const params: any = {
           limit: 10000,
@@ -92,7 +90,8 @@ export default function MastersReportPage() {
 
         const res = await AppointmentApi.getAppointments(params);
 
-        const items = res.items;
+        // адаптация к типу AppointmentListResponse { success, data: { items, total }, error }
+        const items = res.data?.items ?? [];
 
         let totalAppointments = items.length;
         let completedCount = 0;

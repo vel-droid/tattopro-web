@@ -1,3 +1,4 @@
+// app/(dashboard)/appointments/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -73,7 +74,7 @@ export default function AppointmentsPage() {
     useState<DayAvailability | null>(null);
 
   const showToast = (type: "success" | "error", message: string) => {
-    const id = Date.now();
+    const id = Date.now().toString();
     setToasts((prev) => [...prev, { id, type, message }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -83,7 +84,7 @@ export default function AppointmentsPage() {
   const showSuccess = (message: string) => showToast("success", message);
   const showError = (message: string) => showToast("error", message);
 
-  const handleToastClose = (id: number) => {
+  const handleToastClose = (id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
@@ -142,13 +143,16 @@ export default function AppointmentsPage() {
         params,
       )) as AppointmentListResponse;
 
-      const sorted = [...res.items].sort(
+      const items = res.data?.items ?? [];
+      const total = res.data?.total ?? 0;
+
+      const sorted = [...items].sort(
         (a, b) =>
           new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
       );
 
       setAppointments(sorted);
-      setTotal(res.total);
+      setTotal(total);
     } catch (e: any) {
       console.error(e);
       const msg = e.message || "Ошибка загрузки записей";
@@ -184,8 +188,10 @@ export default function AppointmentsPage() {
         status: "ALL" as any,
       })) as AppointmentListResponse;
 
+      const apptItems = apptsRes.data?.items ?? [];
+
       setBusySlots(
-        apptsRes.items.map((a) => ({
+        apptItems.map((a) => ({
           startsAt: a.startsAt,
           endsAt: a.endsAt,
         })),
@@ -254,7 +260,7 @@ export default function AppointmentsPage() {
   const handleCreateClick = () => {
     setEditingAppointment(null);
     setIsFormOpen(true);
-    loadMasterDayData(filters.masterId, filters.date);
+    void loadMasterDayData(filters.masterId, filters.date);
   };
 
   const handleEdit = (appointment: Appointment) => {
@@ -262,7 +268,7 @@ export default function AppointmentsPage() {
     setIsFormOpen(true);
     const start = new Date(appointment.startsAt);
     const dateStr = start.toISOString().slice(0, 10);
-    loadMasterDayData(appointment.masterId, dateStr);
+    void loadMasterDayData(appointment.masterId, dateStr);
   };
 
   const handleDelete = async (appointment: Appointment) => {
@@ -375,7 +381,9 @@ export default function AppointmentsPage() {
         params,
       )) as AppointmentListResponse;
 
-      if (!res.items.length) {
+      const items = res.data?.items ?? [];
+
+      if (!items.length) {
         showError("Нет записей для экспорта");
         return;
       }
@@ -392,7 +400,7 @@ export default function AppointmentsPage() {
         "Заметки",
       ];
 
-      const rows = res.items.map((a) => {
+      const rows = items.map((a) => {
         const date = format(new Date(a.startsAt), "yyyy-MM-dd");
         const time = format(new Date(a.startsAt), "HH:mm");
         const clientName = a.client?.fullName ?? "";
@@ -581,7 +589,7 @@ export default function AppointmentsPage() {
 
         {/* Дневной журнал */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify_between">
             <h2 className="text-sm font-semibold text-gray-700">
               Журнал за{" "}
               {filters.date

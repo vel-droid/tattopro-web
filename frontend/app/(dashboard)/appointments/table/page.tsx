@@ -1,342 +1,278 @@
+// app/(dashboard)/appointments/table/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { format } from "date-fns";
+import { AppointmentApi } from "../../../lib/api";
+import type {
+  Appointment,
+  AppointmentListResponse,
+  AppointmentStatus,
+  Client,
+  Master,
+} from "../../../lib/types";
 
-import type { Appointment, AppointmentStatus, Master } from "@/app/lib/types";
-import { AppointmentApi, MasterApi } from "@/app/lib/api";
-
-const BACKEND_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5000";
-
-type StatusFilter = AppointmentStatus | "ALL";
+type StatusFilter =
+  | "ALL"
+  | "PENDING"
+  | "APPROVED"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "NO_SHOW";
 
 const STATUS_LABELS: Record<StatusFilter, string> = {
   ALL: "Все",
-  PLANNED: "Запланирована",
+  PENDING: "В ожидании",
   APPROVED: "Подтверждена",
   COMPLETED: "Завершена",
-  CANCELED: "Отменена",
-  NO_SHOW: "No‑show",
+  CANCELLED: "Отменена",
+  NO_SHOW: "Не пришёл",
 };
 
-function formatDateTime(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleString("ru-RU", {
-    dateStyle: "short",
-    timeStyle: "short",
-  });
-}
-
-function formatMoney(value: number) {
-  return `${value.toLocaleString("ru-RU", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  })} ₽`;
-}
+type Row = {
+  id: number;
+  date: string;
+  time: string;
+  clientName: string;
+  clientPhone: string;
+  masterName: string;
+  status: AppointmentStatus;
+  statusLabel: string;
+  serviceName: string;
+  price: number;
+  notes: string | null;
+};
 
 export default function AppointmentsTablePage() {
-  const [from, setFrom] = useState<string>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 30);
-    return d.toISOString().slice(0, 10);
-  });
-  const [to, setTo] = useState<string>(() =>
-    new Date().toISOString().slice(0, 10),
-  );
-
-  const [status, setStatus] = useState<StatusFilter>("ALL");
-  const [masterId, setMasterId] = useState<number | "ALL">("ALL");
-
-  const [masters, setMasters] = useState<Master[]>([]);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [items, setItems] = useState<Appointment[]>([]);
   const [total, setTotal] = useState(0);
-  const [limit] = useState(200);
-  const [offset, setOffset] = useState(0);
+  const [limit] = useState(1000);
+  const [offset] = useState(0);
+
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [search, setSearch] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const [mastersLoading, setMastersLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const loadMasters = async () => {
-    try {
-      setMastersLoading(true);
-      const res = (await MasterApi.getAll()) as any;
-      setMasters(res as Master[]);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setMastersLoading(false);
-    }
-  };
 
   const loadAppointments = async () => {
     setLoading(true);
     setError(null);
     try {
-      const params: {
-        from?: string;
-        to?: string;
-        masterId?: number;
-        status?: AppointmentStatus | "ALL";
-        limit?: number;
-        offset?: number;
-      } = {
+      const params: any = {
         limit,
         offset,
       };
 
-      if (from) params.from = `${from}T00:00:00.000Z`;
-      if (to) params.to = `${to}T23:59:59.999Z`;
-      if (masterId !== "ALL") params.masterId = masterId;
-      if (status !== "ALL") params.status = status;
+      if (statusFilter !== "ALL") {
+        params.status = statusFilter;
+      }
 
-      const resp = (await AppointmentApi.getAppointments(
+      const res = (await AppointmentApi.getAppointments(
         params,
-      )) as any as {
-        items: Appointment[];
-        total: number;
-        limit: number;
-        offset: number;
-      };
+      )) as AppointmentListResponse;
 
-      setAppointments(resp.items);
-      setTotal(resp.total);
+      const dataItems = res.data?.items ?? [];
+      const totalCount = res.data?.total ?? 0;
+
+      const sorted = [...dataItems].sort(
+        (a, b) =>
+          new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
+      );
+
+      setItems(sorted);
+      setTotal(totalCount);
     } catch (e: any) {
       console.error(e);
-      setError(e.message || "Ошибка загрузки записей");
+      setError(e.message || "Не удалось загрузить записи");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    void loadMasters();
-  }, []);
-
-  useEffect(() => {
-    setOffset(0);
-  }, [from, to, status, masterId]);
-
-  useEffect(() => {
     void loadAppointments();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [from, to, status, masterId, offset]);
+  }, [limit, offset, statusFilter]);
 
-  const handleExport = () => {
-    const url = new URL("/api/export/appointments", BACKEND_BASE_URL);
+  const rows: Row[] = useMemo(() => {
+    return items.map((a) => {
+      const date = format(new Date(a.startsAt), "yyyy-MM-dd");
+      const time = format(new Date(a.startsAt), "HH:mm");
+      const client: Client | undefined = a.client;
+      const master: Master | undefined = a.master;
 
-    if (from) url.searchParams.set("from", `${from}T00:00:00.000Z`);
-    if (to) url.searchParams.set("to", `${to}T23:59:59.999Z`);
-    if (masterId !== "ALL") url.searchParams.set("masterId", String(masterId));
-    if (status !== "ALL") url.searchParams.set("status", status);
+      const statusLabel =
+        a.status === "PENDING"
+          ? "В ожидании"
+          : a.status === "APPROVED"
+          ? "Подтверждена"
+          : a.status === "COMPLETED"
+          ? "Завершена"
+          : a.status === "CANCELLED"
+          ? "Отменена"
+          : "Не пришёл";
 
-    window.location.href = url.toString();
-  };
+      return {
+        id: a.id,
+        date,
+        time,
+        clientName: client?.fullName ?? "",
+        clientPhone: client?.phone ?? "",
+        masterName: master?.fullName ?? "",
+        status: a.status,
+        statusLabel,
+        serviceName: a.serviceName,
+        price: a.price,
+        notes: a.notes ?? "",
+      };
+    });
+  }, [items]);
 
-  const currentPage = Math.floor(offset / limit) + 1;
-  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const filteredRows = useMemo(() => {
+    const searchLower = search.trim().toLowerCase();
+    if (!searchLower) return rows;
+
+    return rows.filter((row) => {
+      return (
+        row.clientName.toLowerCase().includes(searchLower) ||
+        row.clientPhone.toLowerCase().includes(searchLower) ||
+        row.masterName.toLowerCase().includes(searchLower) ||
+        row.serviceName.toLowerCase().includes(searchLower)
+      );
+    });
+  }, [rows, search]);
 
   return (
     <div className="min-h-screen bg-gray-100">
+      {/* Header */}
       <header className="bg-white shadow">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
-          <div>
+          <div className="flex items-center gap-4">
             <h1 className="text-xl font-semibold text-gray-900">
-              Записи (таблица)
+              Таблица записей
             </h1>
-            <p className="text-sm text-gray-500">
-              Список записей за выбранный период для анализа и экспорта.
-            </p>
-          </div>
-          <div className="flex gap-3">
             <Link
               href="/appointments"
-              className="inline-flex items-center rounded bg-gray-100 px-3 py-2 text-sm font-medium text-gray-800 hover:bg-gray-200"
+              className="text-sm text-blue-600 hover:text-blue-700"
             >
-              ← К календарю записей
+              ← Назад к журналу
             </Link>
-            <button
-              type="button"
-              onClick={handleExport}
-              className="inline-flex items-center rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          </div>
+
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              placeholder="Поиск по клиенту, телефону, мастеру, услуге"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-64 rounded border px-3 py-2 text-sm"
+            />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+              className="min-w-[140px] rounded border px-3 py-2 text-sm"
             >
-              Экспорт в CSV
-            </button>
+              {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl space-y-4 px-4 py-6">
-        <section className="rounded bg-white p-4 shadow">
-          <div className="flex flex-wrap items-end gap-4">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-500">
-                С даты
-              </label>
-              <input
-                type="date"
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                className="rounded border px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-500">
-                По дату
-              </label>
-              <input
-                type="date"
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                className="rounded border px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-500">
-                Статус
-              </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value as StatusFilter)}
-                className="w-44 rounded border px-3 py-2 text-sm"
-              >
-                {Object.entries(STATUS_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-500">
-                Мастер
-              </label>
-              <select
-                value={masterId}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setMasterId(v === "ALL" ? "ALL" : Number(v));
-                }}
-                className="w-52 rounded border px-3 py-2 text-sm"
-                disabled={mastersLoading}
-              >
-                <option value="ALL">Все мастера</option>
-                {masters.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.fullName}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="ml-auto text-xs text-gray-500">
-              {loading
-                ? "Загрузка…"
-                : `Найдено записей: ${total.toLocaleString("ru-RU")}`}
-            </div>
-          </div>
-        </section>
-
+      {/* Main */}
+      <main className="mx-auto max-w-7xl px-4 py-6">
         {error && (
-          <div className="rounded bg-red-100 px-4 py-2 text-sm text-red-700">
+          <div className="mb-4 rounded bg-red-100 px-4 py-2 text-sm text-red-700">
             {error}
           </div>
         )}
 
-        <section className="rounded bg-white p-4 shadow">
-          {appointments.length === 0 && !loading ? (
-            <p className="text-xs text-gray-500">
-              Нет записей за выбранный период.
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 text-xs">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">
-                      Дата / время
-                    </th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">
-                      Мастер
-                    </th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">
-                      Клиент
-                    </th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">
-                      Услуга
-                    </th>
-                    <th className="px-3 py-2 text-right font-medium text-gray-500">
-                      Цена
-                    </th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">
-                      Статус
-                    </th>
-                    <th className="px-3 py-2 text-left font-medium text-gray-500">
-                      Заметки
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {appointments.map((a) => (
-                    <tr key={a.id}>
-                      <td className="px-3 py-2 text-gray-900">
-                        {formatDateTime(a.startsAt)}{" "}
-                        <span className="text-[10px] text-gray-500">
-                          до {formatDateTime(a.endsAt)}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-gray-900">
-                        {a.master?.fullName ?? "—"}
-                      </td>
-                      <td className="px-3 py-2 text-gray-900">
-                        {a.client?.fullName ?? "—"}
-                      </td>
-                      <td className="px-3 py-2 text-gray-900">
-                        {a.serviceName}
-                      </td>
-                      <td className="px-3 py-2 text-right text-gray-900">
-                        {formatMoney(a.price)}
-                      </td>
-                      <td className="px-3 py-2 text-gray-900">
-                        {STATUS_LABELS[a.status]}
-                      </td>
-                      <td className="max-w-xs px-3 py-2 text-gray-900">
-                        <span className="line-clamp-2 break-words">
-                          {a.notes ?? ""}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+        <div className="overflow-x-auto rounded-lg bg-white shadow">
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-3 py-2 text-left font-medium text-gray-700">
+                  Дата
+                </th>
+                <th className="px-3 py-2 text-left font-medium text-gray-700">
+                  Время
+                </th>
+                <th className="px-3 py-2 text-left font-medium text-gray-700">
+                  Клиент
+                </th>
+                <th className="px-3 py-2 text-left font-medium text-gray-700">
+                  Телефон
+                </th>
+                <th className="px-3 py-2 text-left font-medium text-gray-700">
+                  Мастер
+                </th>
+                <th className="px-3 py-2 text-left font-medium text-gray-700">
+                  Услуга
+                </th>
+                <th className="px-3 py-2 text-right font-medium text-gray-700">
+                  Цена
+                </th>
+                <th className="px-3 py-2 text-left font-medium text-gray-700">
+                  Статус
+                </th>
+                <th className="px-3 py-2 text-left font-medium text-gray-700">
+                  Заметки
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {loading && (
+                <tr>
+                  <td
+                    colSpan={9}
+                    className="px-3 py-4 text-center text-sm text-gray-500"
+                  >
+                    Загрузка...
+                  </td>
+                </tr>
+              )}
 
-          <div className="mt-3 flex items-center justify-between text-xs text-gray-600">
-            <div>
-              Страница {currentPage} из {totalPages}
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={offset === 0 || loading}
-                onClick={() => setOffset((prev) => Math.max(0, prev - limit))}
-                className="rounded border px-3 py-1 disabled:opacity-40"
-              >
-                Назад
-              </button>
-              <button
-                type="button"
-                disabled={offset + limit >= total || loading}
-                onClick={() => setOffset((prev) => prev + limit)}
-                className="rounded border px-3 py-1 disabled:opacity-40"
-              >
-                Вперёд
-              </button>
-            </div>
-          </div>
-        </section>
+              {!loading && filteredRows.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={9}
+                    className="px-3 py-4 text-center text-sm text-gray-500"
+                  >
+                    Нет записей по текущим фильтрам/поиску.
+                  </td>
+                </tr>
+              )}
+
+              {!loading &&
+                filteredRows.map((row) => (
+                  <tr key={row.id}>
+                    <td className="px-3 py-2">
+                      {format(new Date(row.date), "dd.MM.yyyy")}
+                    </td>
+                    <td className="px-3 py-2">{row.time}</td>
+                    <td className="px-3 py-2">{row.clientName}</td>
+                    <td className="px-3 py-2">{row.clientPhone}</td>
+                    <td className="px-3 py-2">{row.masterName}</td>
+                    <td className="px-3 py-2">{row.serviceName}</td>
+                    <td className="px-3 py-2 text-right">
+                      {row.price.toFixed(0)}
+                    </td>
+                    <td className="px-3 py-2">{row.statusLabel}</td>
+                    <td className="px-3 py-2">{row.notes}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+
+        <p className="mt-3 text-xs text-gray-500">
+          Показано {filteredRows.length} из {total} записей.
+        </p>
       </main>
     </div>
   );

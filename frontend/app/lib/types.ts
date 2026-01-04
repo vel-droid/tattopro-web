@@ -89,6 +89,15 @@ export type Appointment = {
   updatedAt: string;
 };
 
+export interface AppointmentListResponse {
+  success: boolean;
+  data: {
+    items: Appointment[];
+    total: number;
+  } | null;
+  error: string | null;
+}
+
 export type CreateAppointmentInput = {
   clientId: number;
   masterId: number;
@@ -140,6 +149,29 @@ export interface LowStockResponse {
   count: number;
   items: LowStockItem[];
 }
+
+// ===== REPORTS: INVENTORY OUT (списание со склада) =====
+
+export type InventoryOutReportItem = {
+  // именно этот тип используется в FinanceReportsPage
+  category: InventoryCategory;
+  totalQuantity: number;
+  approxCost?: number | null; // <-- ВАЖНО: добавить это поле
+};
+
+export type InventoryOutReportSummary = {
+  totalQuantity: number;
+  approxCost?: number | null;
+};
+
+export type InventoryOutReportResponse = {
+  range: {
+    from: string;
+    to: string;
+  };
+  summary: InventoryOutReportSummary;
+  items: InventoryOutReportItem[];
+};
 
 // ===== REPORTS: REVENUE BY MASTERS + SERVICES =====
 
@@ -241,22 +273,34 @@ export type ClientsReportResponse = {
   items: ClientReportItem[];
 };
 
-// ===== REPORTS: SERVICES (отдельный отчёт, если будешь использовать напрямую) =====
+// ===== DASHBOARD: APPOINTMENT STATS =====
+
+export interface AppointmentStatsResponse {
+  totalAppointments: number;
+  totalCompleted: number;
+  totalRevenue: number;
+  countsByStatus: Record<string, number>;
+}
+
+// ===== REPORTS: SERVICES (выручка по услугам и категориям) =====
 
 export type ServicesRevenueByServiceItem = {
   serviceId: number | null;
   serviceName: string | null;
-  category: ServiceCategory;
+  serviceCategory: ServiceCategory;
   appointmentsCount: number;
-  revenue: number;
-  averagePrice: number;
+  totalRevenue: number; // <-- добавить это поле
 };
 
 export type ServicesRevenueByCategoryItem = {
   category: ServiceCategory | "OTHER";
   appointmentsCount: number;
-  revenue: number;
-  averagePrice: number;
+  totalRevenue: number; // <-- и здесь
+};
+
+export type ServicesRevenueSummary = {
+  totalRevenue: number;
+  totalCount: number;
 };
 
 export type ServicesRevenueReportResponse = {
@@ -264,8 +308,8 @@ export type ServicesRevenueReportResponse = {
     from: string;
     to: string;
   };
-  totalRevenue: number;
-  totalCount: number;
+  summary: ServicesRevenueSummary;
   byService: ServicesRevenueByServiceItem[];
   byCategory: ServicesRevenueByCategoryItem[];
 };
+
