@@ -1,18 +1,40 @@
 import express from "express";
 import cors from "cors";
+
 import {
   PrismaClient,
   AppointmentStatus,
   ClientStatus,
   ServiceCategory,
-  InventoryCategory,   // ← добавить
-  MovementType,        // ← добавить
+  InventoryCategory,
+  MovementType,
 } from "@prisma/client";
 
 const app = express();
 const prisma = new PrismaClient();
 
-app.use(cors());
+const allowedOrigins = [
+  "https://tattopro-web-7iem.vercel.app",
+  "https://tattopro-web-7iem-1fw31q623-vel-droids-projects.vercel.app",
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) {
+        return callback(null, true); // например, Postman
+      }
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  }),
+);
+
 app.use(express.json());
 
 function ok<T>(data: T) {
