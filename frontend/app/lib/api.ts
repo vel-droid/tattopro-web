@@ -32,7 +32,6 @@ export type ApiResponse<T> = {
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 // ===== BASIC HELPERS =====
-
 /**
  * Handle API response
  */
@@ -50,7 +49,6 @@ async function handleResponse<T>(response: Response): Promise<T> {
 }
 
 // ===== CLIENT API =====
-
 export const ClientApi = {
   async getAll(): Promise<Client[]> {
     try {
@@ -69,7 +67,6 @@ export const ClientApi = {
 };
 
 // ===== MASTER API =====
-
 export const MasterApi = {
   async getAll(): Promise<Master[]> {
     try {
@@ -88,7 +85,6 @@ export const MasterApi = {
 };
 
 // ===== APPOINTMENT API =====
-
 export const AppointmentApi = {
   async getAppointments(params: {
     startDate?: string;
@@ -104,7 +100,6 @@ export const AppointmentApi = {
       if (params.masterId) queryParams.append("masterId", params.masterId);
       if (params.clientId) queryParams.append("clientId", params.clientId);
       if (params.status) queryParams.append("status", params.status);
-
       const response = await fetch(
         `${BASE_URL}/api/appointments?${queryParams.toString()}`,
         {
@@ -129,7 +124,6 @@ export const AppointmentApi = {
       const queryParams = new URLSearchParams();
       if (params.startDate) queryParams.append("startDate", params.startDate);
       if (params.endDate) queryParams.append("endDate", params.endDate);
-
       const response = await fetch(
         `${BASE_URL}/api/stats/appointments?${queryParams.toString()}`,
         {
@@ -148,7 +142,9 @@ export const AppointmentApi = {
     }
   },
 
-  async createAppointment(appointmentData: Partial<Appointment>): Promise<Appointment> {
+  async createAppointment(
+    appointmentData: Partial<Appointment>
+  ): Promise<Appointment> {
     try {
       const response = await fetch(`${BASE_URL}/api/appointments`, {
         method: "POST",
@@ -164,7 +160,10 @@ export const AppointmentApi = {
     }
   },
 
-  async updateAppointment(id: string, appointmentData: Partial<Appointment>): Promise<Appointment> {
+  async updateAppointment(
+    id: string,
+    appointmentData: Partial<Appointment>
+  ): Promise<Appointment> {
     try {
       const response = await fetch(`${BASE_URL}/api/appointments/${id}`, {
         method: "PUT",
@@ -196,13 +195,13 @@ export const AppointmentApi = {
 };
 
 // ===== INVENTORY API =====
-
 export const InventoryApi = {
-  async getLowStock(params: { limit?: number } = {}): Promise<LowStockResponse[]> {
+  async getLowStock(
+    params: { limit?: number } = {}
+  ): Promise<LowStockResponse[]> {
     try {
       const queryParams = new URLSearchParams();
       if (params.limit) queryParams.append("limit", params.limit.toString());
-
       const response = await fetch(
         `${BASE_URL}/inventory/low-stock?${queryParams.toString()}`,
         {
@@ -223,7 +222,6 @@ export const InventoryApi = {
 };
 
 // ===== REPORTS API =====
-
 export const ReportsApi = {
   async getClientsReport(): Promise<ClientsReportResponse[]> {
     try {
@@ -250,7 +248,6 @@ export const ReportsApi = {
       const queryParams = new URLSearchParams();
       if (params.startDate) queryParams.append("startDate", params.startDate);
       if (params.endDate) queryParams.append("endDate", params.endDate);
-
       const response = await fetch(
         `${BASE_URL}/reports/revenue?${queryParams.toString()}`,
         {
@@ -281,7 +278,9 @@ export const ReportsApi = {
       return data.data || [];
     } catch (error) {
       throw new Error(
-        error instanceof Error ? error.message : "Failed to fetch master utilization report"
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch master utilization report"
       );
     }
   },
@@ -318,8 +317,11 @@ export const ReportsApi = {
         error instanceof Error ? error.message : "Failed to fetch services revenue report"
       );
     }
-};  
-rviceApi = {
+  },
+};
+
+// ===== SERVICE API =====
+export const ServiceApi = {
   async getAll(): Promise<Service[]> {
     try {
       const response = await fetch(`${BASE_URL}/api/services`, {
@@ -331,6 +333,7 @@ rviceApi = {
     } catch (error) {
       throw new Error(
         error instanceof Error ? error.message : "Failed to fetch services"
-};
-},
+      );
+    }
+  },
 };
