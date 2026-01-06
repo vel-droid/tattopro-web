@@ -89,8 +89,8 @@ export const AppointmentApi = {
   async getAppointments(params: {
     startDate?: string;
     endDate?: string;
-    masterId?: string;
-    clientId?: string;
+    masterId?: number | string;
+    clientId?: number | string;
     status?: AppointmentStatus;
     limit?: number;
     offset?: number;
