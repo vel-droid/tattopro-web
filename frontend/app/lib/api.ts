@@ -49,7 +49,8 @@ async function handleResponse<T>(response: Response): Promise<T> {
 }
 
 // ===== CLIENT API =====
-export const ClientApi = {
+54
+  = {
   async getAll(): Promise<Client[]> {
     try {
       const response = await fetch(`${BASE_URL}/api/clients`, {
@@ -64,6 +65,21 @@ export const ClientApi = {
       );
     }
   },
+     async update(id: string | number, clientData: Partial<Client>): Promise<Client> {
+   try {
+     const response = await fetch(`${BASE_URL}/api/clients/${id}`, {
+       method: "PUT",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify(clientData),
+     });
+     const data = await handleResponse<ApiResponse<Client>>(response);
+     return data.data;
+   } catch (error) {
+     throw new Error(
+       error instanceof Error ? error.message : "Failed to update client"
+     );
+   }
+ }
 };
 
 // ===== MASTER API =====
