@@ -30,8 +30,9 @@ type DateRangePreset = "today" | "week" | "month";
 
 // Компонент карточки низкого остатка
 function LowStockCard() {
-  const [data, setData] = useState<LowStockResponse[] | null>(null);  const [error, setError] = useState<string | null>(null);
-
+  const [data, setData] = useState<LowStockResponse[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     InventoryApi.getLowStock({ limit: 5 })
       .then((res) => {
