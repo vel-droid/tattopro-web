@@ -227,7 +227,7 @@ export const InventoryApi = {
       const queryParams = new URLSearchParams();
       if (params.limit) queryParams.append("limit", params.limit.toString());
       const response = await fetch(
-        `${BASE_URL}/inventory/low-stock?${queryParams.toString()}`,
+        `${BASE_URL}/api/reports/inventory-low-stock?${queryParams.toString()}`,
         {
           method: "GET",
           headers: { "Content-Type": "application/json" },
