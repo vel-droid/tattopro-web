@@ -187,7 +187,7 @@ export const AppointmentApi = {
     }
   },
 
-  async deleteAppointment(id: string): Promise<void> {
+  async deleteAppointment(id: string | number): Promise<void> {
     try {
       const response = await fetch(`${BASE_URL}/api/appointments/${id}`, {
         method: "DELETE",
