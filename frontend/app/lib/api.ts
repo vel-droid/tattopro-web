@@ -319,9 +319,7 @@ export const ReportsApi = {
       );
     }
 };  
-// ===== SERVICES API =====
-
-export const ServiceApi = {
+rviceApi = {
   async getAll(): Promise<Service[]> {
     try {
       const response = await fetch(`${BASE_URL}/api/services`, {
