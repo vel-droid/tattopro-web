@@ -318,5 +318,24 @@ export const ReportsApi = {
         error instanceof Error ? error.message : "Failed to fetch services revenue report"
       );
     }
+  
+// ===== SERVICES API =====
+
+export const ServiceApi = {
+  async getAll(): Promise<Service[]> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/services`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await handleResponse<ApiResponse<Service[]>>(response);
+      return data.data || [];
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to fetch services"
+      );
+    }
   },
+};
+},
 };
