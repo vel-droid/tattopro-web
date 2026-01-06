@@ -318,7 +318,7 @@ export const ReportsApi = {
         error instanceof Error ? error.message : "Failed to fetch services revenue report"
       );
     }
-  
+};  
 // ===== SERVICES API =====
 
 export const ServiceApi = {
@@ -333,9 +333,6 @@ export const ServiceApi = {
     } catch (error) {
       throw new Error(
         error instanceof Error ? error.message : "Failed to fetch services"
-      );
-    }
-  },
 };
 },
 };
