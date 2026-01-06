@@ -92,7 +92,11 @@ export const AppointmentApi = {
     masterId?: string;
     clientId?: string;
     status?: AppointmentStatus;
-  } = {}): Promise<Appointment[]> {
+    limit?: number;
+    offset?: number;
+    from?: string;
+    to?: string;
+  } = {}): Promise<AppointmentListResponse> {
     try {
       const queryParams = new URLSearchParams();
       if (params.startDate) queryParams.append("startDate", params.startDate);
@@ -100,6 +104,10 @@ export const AppointmentApi = {
       if (params.masterId) queryParams.append("masterId", params.masterId);
       if (params.clientId) queryParams.append("clientId", params.clientId);
       if (params.status) queryParams.append("status", params.status);
+      if (params.limit) queryParams.append("limit", params.limit.toString());
+      if (params.offset) queryParams.append("offset", params.offset.toString());
+      if (params.from) queryParams.append("from", params.from);
+      if (params.to) queryParams.append("to", params.to);
       const response = await fetch(
         `${BASE_URL}/api/appointments?${queryParams.toString()}`,
         {
@@ -107,8 +115,8 @@ export const AppointmentApi = {
           headers: { "Content-Type": "application/json" },
         }
       );
-      const data = await handleResponse<ApiResponse<Appointment[]>>(response);
-      return data.data || [];
+      const data = await handleResponse<AppointmentListResponse>(response);
+      return data;
     } catch (error) {
       throw new Error(
         error instanceof Error ? error.message : "Failed to fetch appointments"
