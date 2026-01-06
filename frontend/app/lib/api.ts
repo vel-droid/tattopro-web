@@ -1,5 +1,4 @@
 // frontend/app/lib/api.ts
-
 import type {
   InventoryItem,
   InventoryCategory,
@@ -21,7 +20,7 @@ import type {
   ServicesRevenueReportResponse,
 } from "./types";
 
-// Универсальный формат ответа бекенда
+// Universal backend API response format
 export type ApiResponse<T> = {
   success: boolean;
   data: T;
@@ -29,386 +28,295 @@ export type ApiResponse<T> = {
   code?: string;
 };
 
-// Базовый URL бекенда
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
+// Base API URL
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-// ===== БАЗОВЫЕ ХЕЛПЕРЫ =====
+// ===== BASIC HELPERS =====
 
-async function apiGet<T>(
-  path: string,
-  params?: Record<string, string | number | boolean | undefined | null>,
-): Promise<T> {
-  const url = new URL(path, API_BASE_URL);
-  if (params) {
-    Object.entries(params).forEach(([key, value]) => {
-      if (value === undefined || value === null || value === "") return;
-      url.searchParams.set(key, String(value));
-    });
+/**
+ * Handle API response
+ */
+async function handleResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const errorText = await response.text();
+    try {
+      const error = JSON.parse(errorText);
+      throw new Error(error.message || `API Error: ${response.status}`);
+    } catch {
+      throw new Error(`API Error: ${response.status} - ${errorText}`);
+    }
   }
-
-  const res = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    cache: "no-store",
-  });
-
-  const json = (await res.json()) as ApiResponse<T>;
-  if (!json.success) {
-    const message = json.error || "API error";
-    throw new Error(message);
-  }
-
-  return json.data;
+  return response.json();
 }
 
-async function apiPost<T>(path: string, body: any): Promise<T> {
-  const url = new URL(path, API_BASE_URL);
-  const res = await fetch(url.toString(), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-
-  const json = (await res.json()) as ApiResponse<T>;
-  if (!json.success) {
-    const message = json.error || "API error";
-    throw new Error(message);
-  }
-
-  return json.data;
-}
-
-async function apiPut<T>(path: string, body: any): Promise<T> {
-  const url = new URL(path, API_BASE_URL);
-  const res = await fetch(url.toString(), {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-
-  const json = (await res.json()) as ApiResponse<T>;
-  if (!json.success) {
-    const message = json.error || "API error";
-    throw new Error(message);
-  }
-
-  return json.data;
-}
-
-async function apiDelete<T>(path: string): Promise<T> {
-  const url = new URL(path, API_BASE_URL);
-  const res = await fetch(url.toString(), {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-
-  const json = (await res.json()) as ApiResponse<T>;
-  if (!json.success) {
-    const message = json.error || "API error";
-    throw new Error(message);
-  }
-
-  return json.data;
-}
-
-// ============= CLIENT API =============
+// ===== CLIENT API =====
 
 export const ClientApi = {
-  getAll(): Promise<Client[]> {
-    return apiGet<Client[]>("/api/clients");
-  },
-
-  create(data: {
-    fullName: string;
-    phone: string;
-    email?: string | null;
-    notes?: string | null;
-    birthDate?: string | null;
-  }): Promise<Client> {
-    return apiPost<Client>("/api/clients", data);
-  },
-
-  update(id: number, data: Partial<Client>): Promise<Client> {
-    return apiPut<Client>(`/api/clients/${id}`, data);
-  },
-
-  delete(id: number): Promise<boolean> {
-    return apiDelete<boolean>(`/api/clients/${id}`);
-  },
-
-  getProblemClients(params?: {
-    minNoShow?: number;
-    limit?: number;
-  }): Promise<Client[]> {
-    return apiGet<Client[]>("/api/clients/problem", params);
+  async getAll(): Promise<Client[]> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/clients`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await handleResponse<ApiResponse<Client[]>>(response);
+      return data.data || [];
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to fetch clients"
+      );
+    }
   },
 };
 
-// ============= MASTER API =============
+// ===== MASTER API =====
 
 export const MasterApi = {
-  getAll(): Promise<Master[]> {
-    return apiGet<Master[]>("/api/masters");
-  },
-
-  create(data: {
-    fullName: string;
-    specialization?: string;
-    phone?: string;
-    isActive?: boolean;
-    bio?: string;
-  }): Promise<Master> {
-    return apiPost<Master>("/api/masters", data);
-  },
-
-  update(id: number, data: Partial<Master>): Promise<Master> {
-    return apiPut<Master>(`/api/masters/${id}`, data);
-  },
-
-  delete(id: number): Promise<boolean> {
-    return apiDelete<boolean>(`/api/masters/${id}`);
+  async getAll(): Promise<Master[]> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/masters`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await handleResponse<ApiResponse<Master[]>>(response);
+      return data.data || [];
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to fetch masters"
+      );
+    }
   },
 };
 
-// ============= SERVICE API =============
-
-export const ServiceApi = {
-  getAll(params?: {
-    includeInactive?: boolean;
-    category?: ServiceCategory;
-  }): Promise<Service[]> {
-    return apiGet<Service[]>("/api/services", params);
-  },
-
-  create(data: {
-    name: string;
-    category: ServiceCategory;
-    basePrice?: number | null;
-    defaultDurationMinutes?: number | null;
-    isActive?: boolean;
-    notes?: string | null;
-  }): Promise<Service> {
-    return apiPost<Service>("/api/services", data);
-  },
-
-  update(
-    id: number,
-    data: Partial<{
-      name: string;
-      category: ServiceCategory;
-      basePrice: number | null;
-      defaultDurationMinutes: number | null;
-      isActive: boolean;
-      notes: string | null;
-    }>,
-  ): Promise<Service> {
-    return apiPut<Service>(`/api/services/${id}`, data);
-  },
-
-  delete(id: number): Promise<boolean> {
-    return apiDelete<boolean>(`/api/services/${id}`);
-  },
-};
-
-// ============= APPOINTMENT API =============
+// ===== APPOINTMENT API =====
 
 export const AppointmentApi = {
-  getAppointments(params: {
-    limit?: number;
-    offset?: number;
-    status?: AppointmentStatus | "ALL";
-    masterId?: number;
-    from?: string;
-    to?: string;
-  }): Promise<AppointmentListResponse> {
-    return apiGet<AppointmentListResponse>("/api/appointments", params);
+  async getAppointments(params: {
+    startDate?: string;
+    endDate?: string;
+    masterId?: string;
+    clientId?: string;
+    status?: AppointmentStatus;
+  } = {}): Promise<Appointment[]> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.startDate) queryParams.append("startDate", params.startDate);
+      if (params.endDate) queryParams.append("endDate", params.endDate);
+      if (params.masterId) queryParams.append("masterId", params.masterId);
+      if (params.clientId) queryParams.append("clientId", params.clientId);
+      if (params.status) queryParams.append("status", params.status);
+
+      const response = await fetch(
+        `${BASE_URL}/api/appointments?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      const data = await handleResponse<ApiResponse<Appointment[]>>(response);
+      return data.data || [];
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to fetch appointments"
+      );
+    }
   },
 
-  createAppointment(data: {
-    clientId: number;
-    masterId: number;
-    serviceId?: number | null;
-    serviceName: string;
-    price: number;
-    startsAt: string;
-    endsAt: string;
-    notes?: string;
-  }): Promise<Appointment> {
-    return apiPost<Appointment>("/api/appointments", data);
+  async getStats(params: {
+    startDate?: string;
+    endDate?: string;
+  } = {}): Promise<AppointmentStatsResponse> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.startDate) queryParams.append("startDate", params.startDate);
+      if (params.endDate) queryParams.append("endDate", params.endDate);
+
+      const response = await fetch(
+        `${BASE_URL}/api/stats/appointments?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      const data = await handleResponse<ApiResponse<AppointmentStatsResponse>>(
+        response
+      );
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to fetch appointment stats"
+      );
+    }
   },
 
-  updateAppointment(
-    id: number,
-    data: Partial<{
-      serviceId: number | null;
-      serviceName: string;
-      price: number;
-      startsAt: string;
-      endsAt: string;
-      status: AppointmentStatus;
-      notes: string | null;
-    }>,
-  ): Promise<Appointment> {
-    return apiPut<Appointment>(`/api/appointments/${id}`, data);
+  async createAppointment(appointmentData: Partial<Appointment>): Promise<Appointment> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/appointments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(appointmentData),
+      });
+      const data = await handleResponse<ApiResponse<Appointment>>(response);
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to create appointment"
+      );
+    }
   },
 
-  deleteAppointment(id: number): Promise<boolean> {
-    return apiDelete<boolean>(`/api/appointments/${id}`);
+  async updateAppointment(id: string, appointmentData: Partial<Appointment>): Promise<Appointment> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/appointments/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(appointmentData),
+      });
+      const data = await handleResponse<ApiResponse<Appointment>>(response);
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to update appointment"
+      );
+    }
   },
 
-  getStats(params: {
-    from: string;
-    to: string;
-    masterId?: number;
-  }): Promise<AppointmentStatsResponse> {
-    return apiGet<AppointmentStatsResponse>("/api/stats/appointments", params);
+  async deleteAppointment(id: string): Promise<void> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/appointments/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      await handleResponse<void>(response);
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to delete appointment"
+      );
+    }
   },
 };
 
-// ============= INVENTORY API =============
+// ===== INVENTORY API =====
 
 export const InventoryApi = {
-  async getAll(): Promise<InventoryItem[]> {
-    return apiGet<InventoryItem[]>("/api/inventory");
-  },
+  async getLowStock(params: { limit?: number } = {}): Promise<LowStockResponse[]> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.limit) queryParams.append("limit", params.limit.toString());
 
-  async create(data: {
-    name: string;
-    unit: string;
-    sku?: string | null;
-    quantity?: number;
-    minQuantity?: number;
-    pricePerUnit?: number | null;
-    isActive?: boolean;
-    notes?: string | null;
-    category: InventoryCategory;
-  }): Promise<InventoryItem> {
-    return apiPost<InventoryItem>("/api/inventory", data);
-  },
-
-  async update(
-    id: number,
-    data: Partial<{
-      name: string;
-      unit: string;
-      sku: string | null;
-      quantity: number;
-      minQuantity: number;
-      pricePerUnit: number | null;
-      isActive: boolean;
-      notes: string | null;
-      category: InventoryCategory;
-    }>,
-  ): Promise<InventoryItem> {
-    return apiPut<InventoryItem>(`/api/inventory/${id}`, data);
-  },
-
-  async delete(id: number): Promise<boolean> {
-    return apiDelete<boolean>(`/api/inventory/${id}`);
-  },
-
-  async getMovements(params: {
-    itemId?: number;
-    from?: string;
-    to?: string;
-    limit?: number;
-    offset?: number;
-  }): Promise<{
-    items: InventoryMovement[];
-    total: number;
-    limit: number;
-    offset: number;
-  }> {
-    return apiGet<{
-      items: InventoryMovement[];
-      total: number;
-      limit: number;
-      offset: number;
-    }>("/api/inventory-movements", params);
-  },
-
-  async createMovement(data: {
-    itemId: number;
-    type: MovementType;
-    quantity: number;
-    reason?: string | null;
-  }): Promise<{ movement: InventoryMovement; item: InventoryItem }> {
-    return apiPost<{ movement: InventoryMovement; item: InventoryItem }>(
-      "/api/inventory-movements",
-      data,
-    );
-  },
-
-  async getOutReport(params: {
-    from: string;
-    to: string;
-  }): Promise<InventoryOutReportResponse> {
-    return apiGet<InventoryOutReportResponse>(
-      "/api/reports/inventory-out",
-      params,
-    );
-  },
-
-  async getLowStock(params: { limit?: number } = {}): Promise<LowStockResponse> {
-    return apiGet<LowStockResponse>("/inventory/low-stock", params);
+      const response = await fetch(
+        `${BASE_URL}/inventory/low-stock?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      const data = await handleResponse<ApiResponse<LowStockResponse[]>>(
+        response
+      );
+      return data.data || [];
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to fetch low stock items"
+      );
+    }
   },
 };
 
-// ============= REPORTS API =============
+// ===== REPORTS API =====
 
 export const ReportsApi = {
+  async getClientsReport(): Promise<ClientsReportResponse[]> {
+    try {
+      const response = await fetch(`${BASE_URL}/reports/clients`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await handleResponse<ApiResponse<ClientsReportResponse[]>>(
+        response
+      );
+      return data.data || [];
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to fetch clients report"
+      );
+    }
+  },
+
   async getRevenueReport(params: {
-    from: string;
-    to: string;
-    masterId?: number;
-  }): Promise<RevenueReportResponse> {
-    return apiGet<RevenueReportResponse>("/api/reports/revenue", params);
+    startDate?: string;
+    endDate?: string;
+  } = {}): Promise<RevenueReportResponse> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.startDate) queryParams.append("startDate", params.startDate);
+      if (params.endDate) queryParams.append("endDate", params.endDate);
+
+      const response = await fetch(
+        `${BASE_URL}/reports/revenue?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      const data = await handleResponse<ApiResponse<RevenueReportResponse>>(
+        response
+      );
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to fetch revenue report"
+      );
+    }
   },
 
-  async getInventoryOutReport(params: {
-    from: string;
-    to: string;
-  }): Promise<InventoryOutReportResponse> {
-    return apiGet<InventoryOutReportResponse>(
-      "/api/reports/inventory-out",
-      params,
-    );
+  async getMasterUtilizationReport(): Promise<MasterUtilizationResponse[]> {
+    try {
+      const response = await fetch(`${BASE_URL}/reports/master-utilization`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await handleResponse<
+        ApiResponse<MasterUtilizationResponse[]>
+      >(response);
+      return data.data || [];
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to fetch master utilization report"
+      );
+    }
   },
 
-  async getMasterUtilization(params: {
-    from: string;
-    to: string;
-  }): Promise<MasterUtilizationResponse> {
-    return apiGet<MasterUtilizationResponse>(
-      "/api/stats/master-utilization",
-      params,
-    );
+  async getInventoryOutReport(): Promise<InventoryOutReportResponse[]> {
+    try {
+      const response = await fetch(`${BASE_URL}/reports/inventory-out`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await handleResponse<
+        ApiResponse<InventoryOutReportResponse[]>
+      >(response);
+      return data.data || [];
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to fetch inventory out report"
+      );
+    }
   },
 
-  async getClientsReport(params: {
-    from: string;
-    to: string;
-  }): Promise<ClientsReportResponse> {
-    return apiGet<ClientsReportResponse>("/api/reports/clients", params);
-  },
-
-  // 👉 новый метод под /api/reports/services
-  async getServicesRevenueReport(params: {
-    from: string;
-    to: string;
-  }): Promise<ServicesRevenueReportResponse> {
-    return apiGet<ServicesRevenueReportResponse>(
-      "/api/reports/services",
-      params,
-    );
+  async getServicesRevenueReport(): Promise<ServicesRevenueReportResponse> {
+    try {
+      const response = await fetch(`${BASE_URL}/reports/services-revenue`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await handleResponse<
+        ApiResponse<ServicesRevenueReportResponse>
+      >(response);
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to fetch services revenue report"
+      );
+    }
   },
 };
