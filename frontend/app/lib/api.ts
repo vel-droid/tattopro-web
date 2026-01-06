@@ -169,7 +169,7 @@ export const AppointmentApi = {
   },
 
   async updateAppointment(
-    id: string,
+    id: string | number,
     appointmentData: Partial<Appointment>
   ): Promise<Appointment> {
     try {
