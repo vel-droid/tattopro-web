@@ -50,7 +50,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
 // ===== CLIENT API =====
 54
-  = {
+  export const ClientApi = {
   async getAll(): Promise<Client[]> {
     try {
       const response = await fetch(`${BASE_URL}/api/clients`, {
