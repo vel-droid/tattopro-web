@@ -274,6 +274,51 @@ export const InventoryApi = {
           error instanceof Error ? error.message : "Failed to fetch inventory movements"
         );
       }
+                                                                                        async create(payload: any): Promise<InventoryItem> {
+   try {
+     const response = await fetch(`${BASE_URL}/api/inventory`, {
+       method: "POST",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify(payload),
+     });
+     const data = await handleResponse<ApiResponse<InventoryItem>>(response);
+     return data.data;
+   } catch (error) {
+     throw new Error(
+       error instanceof Error ? error.message : "Failed to create inventory item"
+     );
+   }
+ },
+ async update(id: string | number, payload: any): Promise<InventoryItem> {
+   try {
+     const response = await fetch(`${BASE_URL}/api/inventory/${id}`, {
+       method: "PUT",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify(payload),
+     });
+     const data = await handleResponse<ApiResponse<InventoryItem>>(response);
+     return data.data;
+   } catch (error) {
+     throw new Error(
+       error instanceof Error ? error.message : "Failed to update inventory item"
+     );
+   }
+ },
+ async createMovement(payload: any): Promise<{ item: InventoryItem; movement: InventoryMovement }> {
+   try {
+     const response = await fetch(`${BASE_URL}/api/inventory/movements`, {
+       method: "POST",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify(payload),
+     });
+     const data = await handleResponse<ApiResponse<{ item: InventoryItem; movement: InventoryMovement }>>(response);
+     return data.data;
+   } catch (error) {
+     throw new Error(
+       error instanceof Error ? error.message : "Failed to create inventory movement"
+     );
+   }
+ }
     },
 };
 
