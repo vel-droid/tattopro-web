@@ -256,6 +256,21 @@ export const InventoryApi = {
         );
       }
     },
+      async getMovements(params?: { itemId?: number }) {
+      try {
+        const queryParams = new URLSearchParams();
+        if (params?.itemId) queryParams.append("itemId", params.itemId.toString());
+        const response = await fetch(`${BASE_URL}/api/inventory/movements?${queryParams.toString()}`);
+        const data = await handleResponse<ApiResponse<InventoryMovement[]>>(
+          response
+        );
+        return data.data || [];
+      } catch (error) {
+        throw new Error(
+          error instanceof Error ? error.message : "Failed to fetch inventory movements"
+        );
+      }
+    },
 };
 
 // ===== REPORTS API =====
