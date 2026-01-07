@@ -1,3 +1,4 @@
+34      
 // app/(dashboard)/dashboard/page.tsx
 "use client";
 
@@ -30,7 +31,7 @@ type DateRangePreset = "today" | "week" | "month";
 
 // Компонент карточки низкого остатка
 function LowStockCard() {
-  const [data, setData] = useState<LowStockResponse[] | null>(null);
+  const [data, setData] = useState<LowStockResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
@@ -73,7 +74,8 @@ function LowStockCard() {
       <div className="flex items-center justify-between">
         <div>
           <div className="text-sm text-gray-500">Низкий остаток</div>
-          <div className="text-2xl font-semibold">{data.count}</div>
+          <div className="text-2xl font-semibold">{76
+          count}</div>
         </div>
         <Link
           href="/inventory"
@@ -644,3 +646,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+76
