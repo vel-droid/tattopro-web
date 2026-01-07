@@ -260,7 +260,7 @@ export const InventoryApi = {
         );
       }
     },
-    async getMovements(params?: { itemId?: number; limit?: number; offset?: number }) {      try {
+    async getMovements(params?: { itemId?: number; limit?: number; offset?: number }) : Promise<InventoryMovement[]>{      try {
         const queryParams = new URLSearchParams();
         if (params?.itemId) queryParams.append("itemId", params.itemId.toString());
         if (params?.limit) queryParams.append("limit", params.limit.toString());
