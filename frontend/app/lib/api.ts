@@ -256,11 +256,11 @@ export const InventoryApi = {
         );
       }
     },
-      async getMovements(params?: { itemId?: number }) {
-      try {
+    async getMovements(params?: { itemId?: number; limit?: number; offset?: number }) {      try {
         const queryParams = new URLSearchParams();
         if (params?.itemId) queryParams.append("itemId", params.itemId.toString());
-        const response = await fetch(`${BASE_URL}/api/inventory/movements?${queryParams.toString()}`);
+        if (params?.limit) queryParams.append("limit", params.limit.toString());
+        if (params?.offset) queryParams.append("offset", params.offset.toString());        const response = await fetch(`${BASE_URL}/api/inventory/movements?${queryParams.toString()}`);
         const data = await handleResponse<ApiResponse<InventoryMovement[]>>(
           response
         );
