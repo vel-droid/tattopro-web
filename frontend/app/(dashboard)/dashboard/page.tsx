@@ -38,7 +38,7 @@ function LowStockCard() {
     InventoryApi.getLowStock({ limit: 5 })
       
       .then((res) => {
-            setData({ count: res.length, items: res });
+            setData(res as LowStockResponse);
                     setError(null);
       })
       .catch((err) => {
