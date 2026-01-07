@@ -38,8 +38,8 @@ function LowStockCard() {
     InventoryApi.getLowStock({ limit: 5 })
       
       .then((res) => {
-        setData(res);
-        setError(null);
+            setData({ count: res.length, items: res });
+                    setError(null);
       })
       .catch((err) => {
         console.error("Low stock load error", err);
