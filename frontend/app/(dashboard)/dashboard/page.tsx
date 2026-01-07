@@ -74,8 +74,7 @@ function LowStockCard() {
       <div className="flex items-center justify-between">
         <div>
           <div className="text-sm text-gray-500">Низкий остаток</div>
-          <div className="text-2xl font-semibold">{76
-          count}</div>
+          <div className="text-2xl font-semibold">{data.count}</div>
         </div>
         <Link
           href="/inventory"
