@@ -274,167 +274,33 @@ export const InventoryApi = {
           error instanceof Error ? error.message : "Failed to fetch inventory movements"
         );
       }
-                                                                                        async create(payload: any): Promise<InventoryItem> {
+    ,
+ async create(payload: any): Promise<InventoryItem> {
    try {
-     const response = await fetch(`${BASE_URL}/api/inventory`, {
-       method: "POST",
-       headers: { "Content-Type": "application/json" },
-       body: JSON.stringify(payload),
-     });
+     const response = await fetch(`${BASE_URL}/api/inventory`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
      const data = await handleResponse<ApiResponse<InventoryItem>>(response);
      return data.data;
    } catch (error) {
-     throw new Error(
-       error instanceof Error ? error.message : "Failed to create inventory item"
-     );
+     throw new Error(error instanceof Error ? error.message : "Failed to create inventory item");
    }
  },
  async update(id: string | number, payload: any): Promise<InventoryItem> {
    try {
-     const response = await fetch(`${BASE_URL}/api/inventory/${id}`, {
-       method: "PUT",
-       headers: { "Content-Type": "application/json" },
-       body: JSON.stringify(payload),
-     });
+     const response = await fetch(`${BASE_URL}/api/inventory/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
      const data = await handleResponse<ApiResponse<InventoryItem>>(response);
      return data.data;
    } catch (error) {
-     throw new Error(
-       error instanceof Error ? error.message : "Failed to update inventory item"
-     );
+     throw new Error(error instanceof Error ? error.message : "Failed to update inventory item");
    }
  },
  async createMovement(payload: any): Promise<{ item: InventoryItem; movement: InventoryMovement }> {
    try {
-     const response = await fetch(`${BASE_URL}/api/inventory/movements`, {
-       method: "POST",
-       headers: { "Content-Type": "application/json" },
-       body: JSON.stringify(payload),
-     });
+     const response = await fetch(`${BASE_URL}/api/inventory/movements`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
      const data = await handleResponse<ApiResponse<{ item: InventoryItem; movement: InventoryMovement }>>(response);
      return data.data;
    } catch (error) {
-     throw new Error(
-       error instanceof Error ? error.message : "Failed to create inventory movement"
-     );
+     throw new Error(error instanceof Error ? error.message : "Failed to create inventory movement");
    }
  }
-    },
 };
 
-// ===== REPORTS API =====
-export const ReportsApi = {
-  async getClientsReport(): Promise<ClientsReportResponse[]> {
-    try {
-      const response = await fetch(`${BASE_URL}/reports/clients`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await handleResponse<ApiResponse<ClientsReportResponse[]>>(
-        response
-      );
-      return data.data || [];
-    } catch (error) {
-      throw new Error(
-        error instanceof Error ? error.message : "Failed to fetch clients report"
-      );
-    }
-  },
-
-  async getRevenueReport(params: {
-    startDate?: string;
-    endDate?: string;
-  } = {}): Promise<RevenueReportResponse> {
-    try {
-      const queryParams = new URLSearchParams();
-      if (params.startDate) queryParams.append("startDate", params.startDate);
-      if (params.endDate) queryParams.append("endDate", params.endDate);
-      const response = await fetch(
-        `${BASE_URL}/reports/revenue?${queryParams.toString()}`,
-        {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-      const data = await handleResponse<ApiResponse<RevenueReportResponse>>(
-        response
-      );
-      return data.data;
-    } catch (error) {
-      throw new Error(
-        error instanceof Error ? error.message : "Failed to fetch revenue report"
-      );
-    }
-  },
-
-  async getMasterUtilizationReport(): Promise<MasterUtilizationResponse[]> {
-    try {
-      const response = await fetch(`${BASE_URL}/reports/master-utilization`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await handleResponse<
-        ApiResponse<MasterUtilizationResponse[]>
-      >(response);
-      return data.data || [];
-    } catch (error) {
-      throw new Error(
-        error instanceof Error
-          ? error.message
-          : "Failed to fetch master utilization report"
-      );
-    }
-  },
-
-  async getInventoryOutReport(): Promise<InventoryOutReportResponse[]> {
-    try {
-      const response = await fetch(`${BASE_URL}/reports/inventory-out`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await handleResponse<
-        ApiResponse<InventoryOutReportResponse[]>
-      >(response);
-      return data.data || [];
-    } catch (error) {
-      throw new Error(
-        error instanceof Error ? error.message : "Failed to fetch inventory out report"
-      );
-    }
-  },
-
-  async getServicesRevenueReport(): Promise<ServicesRevenueReportResponse> {
-    try {
-      const response = await fetch(`${BASE_URL}/reports/services-revenue`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await handleResponse<
-        ApiResponse<ServicesRevenueReportResponse>
-      >(response);
-      return data.data;
-    } catch (error) {
-      throw new Error(
-        error instanceof Error ? error.message : "Failed to fetch services revenue report"
-      );
-    }
-  },
-};
-
-// ===== SERVICE API =====
-export const ServiceApi = {
-  async getAll(): Promise<Service[]> {
-    try {
-      const response = await fetch(`${BASE_URL}/api/services`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await handleResponse<ApiResponse<Service[]>>(response);
-      return data.data || [];
-    } catch (error) {
-      throw new Error(
-        error instanceof Error ? error.message : "Failed to fetch services"
-      );
-    }
-  },
-};
