@@ -143,11 +143,15 @@ export const AppointmentApi = {
   async getStats(params: {
     startDate?: string;
     endDate?: string;
+        from?: string;
+    to?: string;
   } = {}): Promise<AppointmentStatsResponse> {
     try {
       const queryParams = new URLSearchParams();
       if (params.startDate) queryParams.append("startDate", params.startDate);
       if (params.endDate) queryParams.append("endDate", params.endDate);
+           if (params.from) queryParams.append("from", params.from);
+     if (params.to) queryParams.append("to", params.to);
       const response = await fetch(
         `${BASE_URL}/api/stats/appointments?${queryParams.toString()}`,
         {
