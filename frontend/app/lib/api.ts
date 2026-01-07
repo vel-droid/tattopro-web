@@ -273,8 +273,7 @@ export const InventoryApi = {
         throw new Error(
           error instanceof Error ? error.message : "Failed to fetch inventory movements"
         );
-      }
-    ,
+      },
  async create(payload: any): Promise<InventoryItem> {
    try {
      const response = await fetch(`${BASE_URL}/api/inventory`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
