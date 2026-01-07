@@ -34,7 +34,9 @@ function LowStockCard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
+     setLoading(true);
     InventoryApi.getLowStock({ limit: 5 })
+      
       .then((res) => {
         setData(res);
         setError(null);
