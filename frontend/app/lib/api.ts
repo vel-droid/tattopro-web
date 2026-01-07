@@ -243,6 +243,19 @@ export const InventoryApi = {
       );
     }
   },
+      async getAll(): Promise<InventoryItem[]> {
+      try {
+        const response = await fetch(`${BASE_URL}/api/inventory`);
+        const data = await handleResponse<ApiResponse<InventoryItem[]>>(
+          response
+        );
+        return data.data || [];
+      } catch (error) {
+        throw new Error(
+          error instanceof Error ? error.message : "Failed to fetch inventory"
+        );
+      }
+    },
 };
 
 // ===== REPORTS API =====
