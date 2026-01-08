@@ -262,7 +262,7 @@ export const InventoryApi = {
       }
     },
   async getMovements(params?: { itemId?: number; limit?: number; offset?: number }): Promise<InventoryMovement[]> {        const queryParams = new URLSearchParams();
-                                                                                                                       try {
+            try {                                                                                                               try {
         if (params?.itemId) queryParams.append("itemId", params.itemId.toString());
         if (params?.limit) queryParams.append("limit", params.limit.toString());
         if (params?.offset) queryParams.append("offset", params.offset.toString());        const response = await fetch(`${BASE_URL}/api/inventory/movements?${queryParams.toString()}`);
@@ -270,7 +270,7 @@ export const InventoryApi = {
           response
         );
         return data.data || [];
-                                                                                                                     }
+          }                                                                                                             }
       catch (error) {
         throw new Error(
           error instanceof Error ? error.message : "Failed to fetch inventory movements"
