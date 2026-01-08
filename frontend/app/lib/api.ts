@@ -374,6 +374,43 @@ export const InventoryApi = {
   },
 };
 
+// ===== SERVICE API =====
+export const ServiceApi = {
+  async getAll(): Promise<Service[]> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/services`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await handleResponse<ApiResponse<Service[]>>(response);
+      return data.data || [];
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to fetch services"
+      );
+    }
+  },
+
+  async update(
+    id: string | number,
+    serviceData: Partial<Service>
+  ): Promise<Service> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/services/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(serviceData),
+      });
+      const data = await handleResponse<ApiResponse<Service>>(response);
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to update service"
+      );
+    }
+  },
+};
+
 // ===== REPORTS / FINANCE API =====
 export const ReportsApi = {
   // Общий отчёт по выручке
