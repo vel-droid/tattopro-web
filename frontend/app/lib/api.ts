@@ -101,6 +101,25 @@ export const MasterApi = {
       );
     }
   },
+
+  async update(
+    id: string | number,
+    masterData: Partial<Master>
+  ): Promise<Master> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/masters/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(masterData),
+      });
+      const data = await handleResponse<ApiResponse<Master>>(response);
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to update master"
+      );
+    }
+  },
 };
 
 // ===== APPOINTMENT API =====
