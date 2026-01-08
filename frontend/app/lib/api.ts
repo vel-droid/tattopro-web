@@ -421,6 +421,34 @@ export const InventoryApi = {
       );
     }
   },
+
+  async getOutReport(params?: {
+    from?: string;
+    to?: string;
+  }): Promise<InventoryOutReportResponse[]> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.from) queryParams.append("from", params.from);
+      if (params?.to) queryParams.append("to", params.to);
+
+      const response = await fetch(
+        `${BASE_URL}/api/inventory/out-report?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      const data =
+        await handleResponse<ApiResponse<InventoryOutReportResponse[]>>(
+          response
+        );
+      return data.data || [];
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to fetch out report"
+      );
+    }
+  },
 };
 
 // ===== SERVICE API =====
