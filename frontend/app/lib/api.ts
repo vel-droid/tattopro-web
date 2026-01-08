@@ -65,6 +65,22 @@ export const ClientApi = {
     }
   },
 
+  async create(clientData: Partial<Client>): Promise<Client> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/clients`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(clientData),
+      });
+      const data = await handleResponse<ApiResponse<Client>>(response);
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to create client",
+      );
+    }
+  },
+
   async update(
     id: string | number,
     clientData: Partial<Client>,
