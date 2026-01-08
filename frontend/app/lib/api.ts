@@ -542,4 +542,32 @@ export const ReportsApi = {
       );
     }
   },
+  
+// ===== REPORTS API =====
+export const ReportsApi = {
+    async getRevenueReport(params: { from: string; to: string; }): Promise<RevenueReportResponse> {
+          try {
+                  const queryParams = new URLSearchParams();
+                  if (params.from) queryParams.append("from", params.from);
+                  if (params.to) queryParams.append("to", params.to);
+                  const response = await fetch(`${BASE_URL}/api/reports/revenue?${queryParams.toString()}`, { method: "GET", headers: { "Content-Type": "application/json" } });
+                  const data = await handleResponse<ApiResponse<RevenueReportResponse>>(response);
+                  return data.data;
+                } catch (error) {
+                  throw new Error(error instanceof Error ? error.message : "Failed to fetch revenue report");
+                }
+        },
+    async getServicesRevenueReport(params: { from: string; to: string; }): Promise<ServicesRevenueReportResponse> {
+          try {
+                  const queryParams = new URLSearchParams();
+                  if (params.from) queryParams.append("from", params.from);
+      if (params.to) queryParams.append("to", params.to);
+      const response = await fetch(`${BASE_URL}/api/reports/services-revenue?${queryParams.toString()}`, { method: "GET", headers: { "Content-Type": "application/json" } });
+      const data = await handleResponse<ApiResponse<ServicesRevenueReportResponse>>(response);
+      return data.data;
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : "Failed to fetch services revenue report");
+    }
+  },
+};
 };
