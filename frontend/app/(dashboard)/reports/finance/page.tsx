@@ -293,8 +293,9 @@ export default function FinanceReportsPage() {
     useState<RevenueReportResponse | null>(null);
   const [servicesReport, setServicesReport] =
     useState<ServicesRevenueReportResponse | null>(null);
+  // исправлено: храним массив, а не single/null
   const [inventoryOut, setInventoryOut] =
-    useState<InventoryOutReportResponse | null>(null);
+    useState<InventoryOutReportResponse[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -320,11 +321,10 @@ export default function FinanceReportsPage() {
 
   const grossProfit = useMemo(() => {
     const revenue = revenueReport?.totalRevenue ?? 0;
-    const cogs =
-      inventoryOut?.items.reduce(
-        (sum, row) => sum + (row.approxCost ?? 0),
-        0,
-      ) ?? 0;
+    const cogs = inventoryOut.reduce(
+      (sum, row) => sum + (row.approxCost ?? 0),
+      0,
+    );
     return revenue - cogs;
   }, [revenueReport, inventoryOut]);
 
@@ -402,10 +402,10 @@ export default function FinanceReportsPage() {
               <div className="text-xs text-gray-500">COGS (материалы)</div>
               <div className="mt-1 text-lg font-semibold">
                 {formatMoney(
-                  inventoryOut?.items.reduce(
+                  inventoryOut.reduce(
                     (sum, row) => sum + (row.approxCost ?? 0),
                     0,
-                  ) ?? 0,
+                  ),
                 )}
               </div>
             </div>
@@ -463,7 +463,7 @@ export default function FinanceReportsPage() {
               <h2 className="mb-2 text-sm font-semibold">
                 Расход материалов (COGS)
               </h2>
-              {inventoryOut?.items.length === 0 ? (
+              {inventoryOut.length === 0 ? (
                 <p className="text-sm text-gray-500">
                   Нет списаний материалов за период.
                 </p>
@@ -477,7 +477,7 @@ export default function FinanceReportsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {inventoryOut?.items.map((row) => (
+                    {inventoryOut.map((row) => (
                       <tr
                         key={row.category}
                         className="border-b last:border-0"
