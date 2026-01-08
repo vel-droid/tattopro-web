@@ -142,7 +142,8 @@ export default function ReportsOverviewPage() {
         servicesRevenue,
       ] = await Promise.all([
         ReportsApi.getRevenueReport({ from: fromIso, to: toIso }),
-        ReportsApi.getInventoryOutReport({ from: fromIso, to: toIso }),
+        // исправлено: используем InventoryApi.getOutReport
+        InventoryApi.getOutReport({ from: fromIso, to: toIso }),
         ReportsApi.getMasterUtilization({ from: fromIso, to: toIso }),
         InventoryApi.getLowStock({}),
         AppointmentApi.getStats({ from: fromIso, to: toIso }),
@@ -167,6 +168,7 @@ export default function ReportsOverviewPage() {
       const byCategoryRaw =
         (inventoryOutReport as any)?.byCategory ??
         (inventoryOutReport as any)?.items ??
+        inventoryOutReport ??
         [];
       setInventoryWriteoffs(
         byCategoryRaw.map((row: any) => ({
@@ -295,7 +297,7 @@ export default function ReportsOverviewPage() {
                 Выберите период для отчёта.
               </span>
             </div>
-            <div className="ml-auto flex flex-wrap items	end gap-4">
+            <div className="ml-auto flex flex-wrap items-end gap-4">
               <div>
                 <label className="mb-1 block text-xs font-medium text-gray-500">
                   С даты
@@ -393,7 +395,7 @@ export default function ReportsOverviewPage() {
         </section>
 
         {/* выручка по услугам */}
-        <section className="space-y-2 rounded bg_white p-4 shadow">
+        <section className="space-y-2 rounded bg-white p-4 shadow">
           <h2 className="text-sm font-semibold text-gray-800">
             Выручка по услугам
           </h2>
