@@ -1,4 +1,3 @@
-
 // frontend/app/lib/api.ts
 import type {
   InventoryItem,
@@ -50,8 +49,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 }
 
 // ===== CLIENT API =====
-54
-  export const ClientApi = {
+export const ClientApi = {
   async getAll(): Promise<Client[]> {
     try {
       const response = await fetch(`${BASE_URL}/api/clients`, {
@@ -60,27 +58,31 @@ async function handleResponse<T>(response: Response): Promise<T> {
       });
       const data = await handleResponse<ApiResponse<Client[]>>(response);
       return data.data || [];
-    
+    } catch (error) {
       throw new Error(
         error instanceof Error ? error.message : "Failed to fetch clients"
       );
     }
   },
-     async update(id: string | number, clientData: Partial<Client>): Promise<Client> {
-   try {
-     const response = await fetch(`${BASE_URL}/api/clients/${id}`, {
-       method: "PUT",
-       headers: { "Content-Type": "application/json" },
-       body: JSON.stringify(clientData),
-     });
-     const data = await handleResponse<ApiResponse<Client>>(response);
-     return data.data;
-   
-     throw new Error(
-       error instanceof Error ? error.message : "Failed to update client"
-     );
-   }
- }
+
+  async update(
+    id: string | number,
+    clientData: Partial<Client>
+  ): Promise<Client> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/clients/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(clientData),
+      });
+      const data = await handleResponse<ApiResponse<Client>>(response);
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to update client"
+      );
+    }
+  },
 };
 
 // ===== MASTER API =====
@@ -93,7 +95,7 @@ export const MasterApi = {
       });
       const data = await handleResponse<ApiResponse<Master[]>>(response);
       return data.data || [];
-    
+    } catch (error) {
       throw new Error(
         error instanceof Error ? error.message : "Failed to fetch masters"
       );
@@ -118,13 +120,16 @@ export const AppointmentApi = {
       const queryParams = new URLSearchParams();
       if (params.startDate) queryParams.append("startDate", params.startDate);
       if (params.endDate) queryParams.append("endDate", params.endDate);
-      if (params.masterId) queryParams.append("masterId", params.masterId);
-      if (params.clientId) queryParams.append("clientId", params.clientId);
+      if (params.masterId)
+        queryParams.append("masterId", String(params.masterId));
+      if (params.clientId)
+        queryParams.append("clientId", String(params.clientId));
       if (params.status) queryParams.append("status", params.status);
       if (params.limit) queryParams.append("limit", params.limit.toString());
       if (params.offset) queryParams.append("offset", params.offset.toString());
       if (params.from) queryParams.append("from", params.from);
       if (params.to) queryParams.append("to", params.to);
+
       const response = await fetch(
         `${BASE_URL}/api/appointments?${queryParams.toString()}`,
         {
@@ -134,7 +139,7 @@ export const AppointmentApi = {
       );
       const data = await handleResponse<AppointmentListResponse>(response);
       return data;
-    
+    } catch (error) {
       throw new Error(
         error instanceof Error ? error.message : "Failed to fetch appointments"
       );
@@ -144,15 +149,16 @@ export const AppointmentApi = {
   async getStats(params: {
     startDate?: string;
     endDate?: string;
-        from?: string;
+    from?: string;
     to?: string;
   } = {}): Promise<AppointmentStatsResponse> {
     try {
       const queryParams = new URLSearchParams();
       if (params.startDate) queryParams.append("startDate", params.startDate);
       if (params.endDate) queryParams.append("endDate", params.endDate);
-           if (params.from) queryParams.append("from", params.from);
-     if (params.to) queryParams.append("to", params.to);
+      if (params.from) queryParams.append("from", params.from);
+      if (params.to) queryParams.append("to", params.to);
+
       const response = await fetch(
         `${BASE_URL}/api/stats/appointments?${queryParams.toString()}`,
         {
@@ -164,9 +170,11 @@ export const AppointmentApi = {
         response
       );
       return data.data;
-    
+    } catch (error) {
       throw new Error(
-        error instanceof Error ? error.message : "Failed to fetch appointment stats"
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch appointment stats"
       );
     }
   },
@@ -182,7 +190,7 @@ export const AppointmentApi = {
       });
       const data = await handleResponse<ApiResponse<Appointment>>(response);
       return data.data;
-    
+    } catch (error) {
       throw new Error(
         error instanceof Error ? error.message : "Failed to create appointment"
       );
@@ -201,7 +209,7 @@ export const AppointmentApi = {
       });
       const data = await handleResponse<ApiResponse<Appointment>>(response);
       return data.data;
-    
+    } catch (error) {
       throw new Error(
         error instanceof Error ? error.message : "Failed to update appointment"
       );
@@ -215,7 +223,7 @@ export const AppointmentApi = {
         headers: { "Content-Type": "application/json" },
       });
       await handleResponse<void>(response);
-    
+    } catch (error) {
       throw new Error(
         error instanceof Error ? error.message : "Failed to delete appointment"
       );
@@ -231,6 +239,7 @@ export const InventoryApi = {
     try {
       const queryParams = new URLSearchParams();
       if (params.limit) queryParams.append("limit", params.limit.toString());
+
       const response = await fetch(
         `${BASE_URL}/api/reports/inventory-low-stock?${queryParams.toString()}`,
         {
@@ -242,66 +251,128 @@ export const InventoryApi = {
         response
       );
       return data.data || [];
-    
+    } catch (error) {
       throw new Error(
-        error instanceof Error ? error.message : "Failed to fetch low stock items"
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch low stock items"
       );
     }
   },
-      async getAll(): Promise<InventoryItem[]> {
-      try {
-        const response = await fetch(`${BASE_URL}/api/inventory`);
-        const data = await handleResponse<ApiResponse<InventoryItem[]>>(
-          response
-        );
-        return data.data || [];
-      
-        throw new Error(
-          error instanceof Error ? error.message : "Failed to fetch inventory"
-        );
-      }
-    },
-  async getMovements(params?: { itemId?: number; limit?: number; offset?: number }): Promise<InventoryMovement[]> {        const queryParams = new URLSearchParams();
-            try {                                                                                                               try {
-        if (params?.itemId) queryParams.append("itemId", params.itemId.toString());
-        if (params?.limit) queryParams.append("limit", params.limit.toString());
-        if (params?.offset) queryParams.append("offset", params.offset.toString());        const response = await fetch(`${BASE_URL}/api/inventory/movements?${queryParams.toString()}`);
-        const data = await handleResponse<ApiResponse<InventoryMovement[]>>(
-          response
-        );
-        return data.data || [];
-          }                                                                                                             }
-      catch (error) {
-        throw new Error(
-          error instanceof Error ? error.message : "Failed to fetch inventory movements"
-        );
-      },
- async create(payload: any): Promise<InventoryItem> {
-   try {
-     const response = await fetch(`${BASE_URL}/api/inventory`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-     const data = await handleResponse<ApiResponse<InventoryItem>>(response);
-     return data.data;
-   
-     throw new Error(error instanceof Error ? error.message : "Failed to create inventory item");
-   }
- },
- async update(id: string | number, payload: any): Promise<InventoryItem> {
-   try {
-     const response = await fetch(`${BASE_URL}/api/inventory/${id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-     const data = await handleResponse<ApiResponse<InventoryItem>>(response);
-     return data.data;
-   
-     throw new Error(error instanceof Error ? error.message : "Failed to update inventory item");
-   }
- },
- async createMovement(payload: any): Promise<{ item: InventoryItem; movement: InventoryMovement }> {
-   try {
-     const response = await fetch(`${BASE_URL}/api/inventory/movements`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-     const data = await handleResponse<ApiResponse<{ item: InventoryItem; movement: InventoryMovement }>>(response);
-     return data.data;
-   
-     throw new Error(error instanceof Error ? error.message : "Failed to create inventory movement");
-   }
- }
+
+  async getAll(): Promise<InventoryItem[]> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/inventory`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await handleResponse<ApiResponse<InventoryItem[]>>(response);
+      return data.data || [];
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to fetch inventory"
+      );
+    }
+  },
+
+  async getMovements(params?: {
+    itemId?: number;
+    limit?: number;
+    offset?: number;
+  }): Promise<InventoryMovement[]> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.itemId)
+        queryParams.append("itemId", params.itemId.toString());
+      if (params?.limit)
+        queryParams.append("limit", params.limit.toString());
+      if (params?.offset)
+        queryParams.append("offset", params.offset.toString());
+
+      const response = await fetch(
+        `${BASE_URL}/api/inventory/movements?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      const data = await handleResponse<ApiResponse<InventoryMovement[]>>(
+        response
+      );
+      return data.data || [];
+    } catch (error) {
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch inventory movements"
+      );
+    }
+  },
+
+  async create(payload: Partial<InventoryItem>): Promise<InventoryItem> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/inventory`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await handleResponse<ApiResponse<InventoryItem>>(response);
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Failed to create inventory item"
+      );
+    }
+  },
+
+  async update(
+    id: string | number,
+    payload: Partial<InventoryItem>
+  ): Promise<InventoryItem> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/inventory/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await handleResponse<ApiResponse<InventoryItem>>(response);
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Failed to update inventory item"
+      );
+    }
+  },
+
+  async createMovement(payload: {
+    itemId: number;
+    type: MovementType;
+    quantity: number;
+    reason?: string;
+  }): Promise<{ item: InventoryItem; movement: InventoryMovement }> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/inventory/movements`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await handleResponse<
+        ApiResponse<{ item: InventoryItem; movement: InventoryMovement }>
+      >(response);
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Failed to create inventory movement"
+      );
+    }
+  },
 };
 
+// ===== SERVICES / REPORTS APIS (если нужны) =====
+// Здесь можно добавить ServiceApi, ReportsApi и т.д. по аналогии с вышеописанными.
