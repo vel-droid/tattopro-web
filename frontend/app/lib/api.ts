@@ -374,5 +374,172 @@ export const InventoryApi = {
   },
 };
 
-// ===== SERVICES / REPORTS APIS (если нужны) =====
-// Здесь можно добавить ServiceApi, ReportsApi и т.д. по аналогии с вышеописанными.
+// ===== REPORTS / FINANCE API =====
+export const ReportsApi = {
+  // Отчёт по выручке (общий)
+  async getRevenue(params: {
+    startDate?: string;
+    endDate?: string;
+    from?: string;
+    to?: string;
+  } = {}): Promise<RevenueReportResponse> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.startDate) queryParams.append("startDate", params.startDate);
+      if (params.endDate) queryParams.append("endDate", params.endDate);
+      if (params.from) queryParams.append("from", params.from);
+      if (params.to) queryParams.append("to", params.to);
+
+      const response = await fetch(
+        `${BASE_URL}/api/reports/revenue?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      const data =
+        await handleResponse<ApiResponse<RevenueReportResponse>>(response);
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to fetch revenue report"
+      );
+    }
+  },
+
+  // Отчёт по выручке по услугам
+  async getServicesRevenue(params: {
+    startDate?: string;
+    endDate?: string;
+    from?: string;
+    to?: string;
+  } = {}): Promise<ServicesRevenueReportResponse> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.startDate) queryParams.append("startDate", params.startDate);
+      if (params.endDate) queryParams.append("endDate", params.endDate);
+      if (params.from) queryParams.append("from", params.from);
+      if (params.to) queryParams.append("to", params.to);
+
+      const response = await fetch(
+        `${BASE_URL}/api/reports/services-revenue?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      const data =
+        await handleResponse<ApiResponse<ServicesRevenueReportResponse>>(
+          response
+        );
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch services revenue report"
+      );
+    }
+  },
+
+  // Отчёт по выбытию (расходу) материалов
+  async getInventoryOut(params: {
+    startDate?: string;
+    endDate?: string;
+    from?: string;
+    to?: string;
+  } = {}): Promise<InventoryOutReportResponse> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.startDate) queryParams.append("startDate", params.startDate);
+      if (params.endDate) queryParams.append("endDate", params.endDate);
+      if (params.from) queryParams.append("from", params.from);
+      if (params.to) queryParams.append("to", params.to);
+
+      const response = await fetch(
+        `${BASE_URL}/api/reports/inventory-out?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      const data =
+        await handleResponse<ApiResponse<InventoryOutReportResponse>>(
+          response
+        );
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch inventory out report"
+      );
+    }
+  },
+
+  // Загрузка для отчёта по загруженности мастеров
+  async getMasterUtilization(params: {
+    startDate?: string;
+    endDate?: string;
+    from?: string;
+    to?: string;
+  } = {}): Promise<MasterUtilizationResponse> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.startDate) queryParams.append("startDate", params.startDate);
+      if (params.endDate) queryParams.append("endDate", params.endDate);
+      if (params.from) queryParams.append("from", params.from);
+      if (params.to) queryParams.append("to", params.to);
+
+      const response = await fetch(
+        `${BASE_URL}/api/reports/master-utilization?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      const data =
+        await handleResponse<ApiResponse<MasterUtilizationResponse>>(response);
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch master utilization report"
+      );
+    }
+  },
+
+  // Отчёт по клиентам
+  async getClientsReport(params: {
+    startDate?: string;
+    endDate?: string;
+    from?: string;
+    to?: string;
+  } = {}): Promise<ClientsReportResponse> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.startDate) queryParams.append("startDate", params.startDate);
+      if (params.endDate) queryParams.append("endDate", params.endDate);
+      if (params.from) queryParams.append("from", params.from);
+      if (params.to) queryParams.append("to", params.to);
+
+      const response = await fetch(
+        `${BASE_URL}/api/reports/clients?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      const data =
+        await handleResponse<ApiResponse<ClientsReportResponse>>(response);
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch clients report"
+      );
+    }
+  },
+};
