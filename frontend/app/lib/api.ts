@@ -539,7 +539,7 @@ export const ReportsApi = {
         error instanceof Error
           ? error.message
           : "Failed to fetch clients report"
-      );
+      
     }
   },
   
