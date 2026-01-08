@@ -102,6 +102,22 @@ export const MasterApi = {
     }
   },
 
+  async create(masterData: Partial<Master>): Promise<Master> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/masters`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(masterData),
+      });
+      const data = await handleResponse<ApiResponse<Master>>(response);
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to create master"
+      );
+    }
+  },
+
   async update(
     id: string | number,
     masterData: Partial<Master>
@@ -117,6 +133,20 @@ export const MasterApi = {
     } catch (error) {
       throw new Error(
         error instanceof Error ? error.message : "Failed to update master"
+      );
+    }
+  },
+
+  async delete(id: string | number): Promise<void> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/masters/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      await handleResponse<void>(response);
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to delete master"
       );
     }
   },
