@@ -90,7 +90,8 @@ export default function InventoryPage() {
         limit: 50,
         offset: 0,
       });
-      setMovements(data.items);
+      // здесь важное исправление: getMovements возвращает массив, а не { items }
+      setMovements(data);
     } catch (e: any) {
       pushToast({
         type: "error",
