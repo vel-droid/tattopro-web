@@ -570,4 +570,3 @@ export const ReportsApi = {
     }
   },
 };
-};
