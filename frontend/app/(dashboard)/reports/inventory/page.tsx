@@ -50,7 +50,8 @@ export default function InventoryReportPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [report, setReport] = useState<InventoryOutReportResponse | null>(null);
+  // исправление: отчёт теперь массив, а не один объект
+  const [report, setReport] = useState<InventoryOutReportResponse[]>([]);
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
 
   const loadData = async () => {
@@ -65,13 +66,14 @@ export default function InventoryReportPage() {
     try {
       const [outReport, movementPage] = await Promise.all([
         InventoryApi.getOutReport({ from, to }),
-        InventoryApi.getMovements({ from, to, limit: 200, offset: 0 }),
+        // исправление: getMovements не принимает from/to
+        InventoryApi.getMovements({ limit: 200, offset: 0 }),
       ]);
 
       setReport(outReport);
       // берём только OUT-движения для детализации
       setMovements(
-        movementPage.items.filter((m) => (m as any).type === "OUT"),
+        (movementPage as any[]).filter((m) => (m as any).type === "OUT"),
       );
     } catch (e: any) {
       console.error(e);
@@ -88,9 +90,11 @@ export default function InventoryReportPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const items = report?.items ?? [];
-  const totalApproxCost =
-    items.reduce((sum, row) => sum + (row.approxCost ?? 0), 0) ?? 0;
+  const items = report ?? [];
+  const totalApproxCost = items.reduce((sum, row: any) => {
+    const cost = row.approxCost ?? 0;
+    return sum + (typeof cost === "number" ? cost : 0);
+  }, 0);
 
   const hasAnyData = items.length > 0 || movements.length > 0;
 
@@ -103,7 +107,8 @@ export default function InventoryReportPage() {
             Отчёт по складу
           </h1>
           <p className="text-sm text-gray-500">
-            Списания расходников по категориям и список движений OUT за выбранный период.
+            Списания расходников по категориям и список движений OUT за
+            выбранный период.
           </p>
         </div>
 
@@ -171,7 +176,7 @@ export default function InventoryReportPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
-                {items.map((row, index) => (
+                {items.map((row: any, index: number) => (
                   <tr key={`${row.category}-${index}`}>
                     <td className="px-4 py-2 text-gray-700">
                       {inventoryCategoryLabels[
@@ -187,9 +192,7 @@ export default function InventoryReportPage() {
                   </tr>
                 ))}
                 <tr className="border-t bg-gray-50">
-                  <td className="px-4 py-2 text-sm font-semibold">
-                    Итого
-                  </td>
+                  <td className="px-4 py-2 text-sm font-semibold">Итого</td>
                   <td className="px-4 py-2" />
                   <td className="px-4 py-2 text-sm font-semibold">
                     {formatMoney(totalApproxCost)}
@@ -228,7 +231,6 @@ export default function InventoryReportPage() {
                   <tr key={m.id}>
                     <td className="px-4 py-2">
                       {formatDate(
-                        // подстраиваемся под возможные поля даты
                         (m as any).date ??
                           (m as any).createdAt ??
                           (m as any).movedAt ??
