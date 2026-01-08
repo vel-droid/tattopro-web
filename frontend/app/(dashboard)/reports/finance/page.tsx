@@ -293,7 +293,6 @@ export default function FinanceReportsPage() {
     useState<RevenueReportResponse | null>(null);
   const [servicesReport, setServicesReport] =
     useState<ServicesRevenueReportResponse | null>(null);
-  // исправлено: храним массив, а не single/null
   const [inventoryOut, setInventoryOut] =
     useState<InventoryOutReportResponse[]>([]);
 
@@ -321,10 +320,10 @@ export default function FinanceReportsPage() {
 
   const grossProfit = useMemo(() => {
     const revenue = revenueReport?.totalRevenue ?? 0;
-    const cogs = inventoryOut.reduce(
-      (sum, row) => sum + (row.approxCost ?? 0),
-      0,
-    );
+    const cogs = inventoryOut.reduce((sum, row: any) => {
+      const cost = row.approxCost ?? 0;
+      return sum + (typeof cost === "number" ? cost : 0);
+    }, 0);
     return revenue - cogs;
   }, [revenueReport, inventoryOut]);
 
@@ -402,10 +401,10 @@ export default function FinanceReportsPage() {
               <div className="text-xs text-gray-500">COGS (материалы)</div>
               <div className="mt-1 text-lg font-semibold">
                 {formatMoney(
-                  inventoryOut.reduce(
-                    (sum, row) => sum + (row.approxCost ?? 0),
-                    0,
-                  ),
+                  inventoryOut.reduce((sum, row: any) => {
+                    const cost = row.approxCost ?? 0;
+                    return sum + (typeof cost === "number" ? cost : 0);
+                  }, 0),
                 )}
               </div>
             </div>
@@ -477,7 +476,7 @@ export default function FinanceReportsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {inventoryOut.map((row) => (
+                    {inventoryOut.map((row: any) => (
                       <tr
                         key={row.category}
                         className="border-b last:border-0"
