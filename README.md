@@ -10,6 +10,7 @@ TattooPro is a modern web application designed specifically for tattoo salon own
 
 **Frontend:**
 
+
 - Next.js 16+ with React
 - TypeScript
 - Tailwind CSS for styling
