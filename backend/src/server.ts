@@ -3213,6 +3213,15 @@ app.get("/api/reports/inventory-out-raw", async (req, res) => {
       orderBy: { createdAt: "asc" },
     });
 
+    type InventoryOutRow = {
+      movementId: number;
+      date: string;
+      itemId: number | null;
+      itemName: string | null;
+      quantity: number;
+      reason: string | null;
+    };
+
     const rows: InventoryOutRow[] = movements.map((m) => ({
       movementId: m.id,
       date: m.createdAt.toISOString(),
@@ -3250,3 +3259,4 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`API server listening on http://localhost:${PORT}`);
 });
+
