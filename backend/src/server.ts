@@ -13,15 +13,32 @@ import {
 const app = express();
 const prisma = new PrismaClient();
 
-// CORS — временно разрешаем всех
+// сюда добавляем все фронтовые домены
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://tattopro-web-7iem.vercel.app",
+  "https://tattopro-web-7iem-9b0dln8o7-vel-droids-projects.vercel.app",
+  "https://tattopro-web-7iem-1fw31q623-vel-droids-projects.vercel.app",
+];
+
 app.use(
   cors({
-    origin: true,
+    origin: (origin, callback) => {
+      // запросы без Origin (Postman, curl) пропускаем
+      if (!origin) {
+        return callback(null, true);
+      }
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   }),
 );
+app.options('*', cors());
 
 app.use(express.json());
 
@@ -3188,31 +3205,6 @@ app.get("/api/reports/inventory-out-raw", async (req, res) => {
       },
     });
 
-   type InventoryOutRow = {
-  movementId: number;
-  date: string;
-  itemId: number | null;
-  itemName: string | null;
-  quantity: number;
-  reason: string | null;
-};
-
-app.get("/api/reports/inventory-out-raw", async (req, res) => {
-  try {
-    const from = new Date(req.query.from as string);
-    const to = new Date(req.query.to as string);
-
-    const movements = await prisma.inventoryMovement.findMany({
-      where: {
-        type: "OUT",
-        createdAt: {
-          gte: from,
-          lte: to,
-        },
-      },
-      orderBy: { createdAt: "asc" },
-    });
-
     type InventoryOutRow = {
       movementId: number;
       date: string;
@@ -3259,4 +3251,3 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`API server listening on http://localhost:${PORT}`);
 });
-
