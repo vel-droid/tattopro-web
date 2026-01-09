@@ -17,9 +17,10 @@ const prisma = new PrismaClient();
 const allowedOrigins = [
   "http://localhost:3000",
   "https://tattopro-web-7iem.vercel.app",
-    "https://tattopro-web-7iem-p1gxivqo9-vel-droids-projects.vercel.app",
+  "https://tattopro-web-7iem-p1gxivqo9-vel-droids-projects.vercel.app",
   "https://tattopro-web-7iem-9b0dln8o7-vel-droids-projects.vercel.app",
   "https://tattopro-web-7iem-1fw31q623-vel-droids-projects.vercel.app",
+  "https://tattopro-web-7iem-k5iw6vd6c-vel-droids-projects.vercel.app",
 ];
 
 app.use(
