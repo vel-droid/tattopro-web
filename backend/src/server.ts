@@ -3221,14 +3221,30 @@ app.get("/api/reports/inventory-out-raw", async (req, res) => {
       },
     });
 
-    type InventoryOutRow = {
-      movementId: number;
-      date: string;
-      itemId: number | null;
-      itemName: string | null;
-      quantity: number;
-      reason: string | null;
-    };
+   type InventoryOutRow = {
+  movementId: number;
+  date: string;
+  itemId: number | null;
+  itemName: string | null;
+  quantity: number;
+  reason: string | null;
+};
+
+app.get("/api/reports/inventory-out-raw", async (req, res) => {
+  try {
+    const from = new Date(req.query.from as string);
+    const to = new Date(req.query.to as string);
+
+    const movements = await prisma.inventoryMovement.findMany({
+      where: {
+        type: "OUT",
+        createdAt: {
+          gte: from,
+          lte: to,
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    });
 
     const rows: InventoryOutRow[] = movements.map((m) => ({
       movementId: m.id,
