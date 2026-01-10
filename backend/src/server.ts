@@ -1264,7 +1264,7 @@ app.get("/api/reports/inventory-out", async (req, res) => {
 });
 
 // Низкий остаток для дашборда
-app.get("/inventory/low-stock", async (req, res) => {
+app.get("/inventory-low-stock", async (req, res) => {
   try {
     const limit = parseIntParam(req.query.limit, 5) ?? 5;
 
@@ -1297,7 +1297,7 @@ app.get("/inventory/low-stock", async (req, res) => {
       }),
     );
   } catch (err) {
-    console.error("GET /inventory/low-stock error", err);
+    console.error("GET /inventory-low-stock error", err);
     res.status(500).json(fail("Failed to fetch low stock items"));
   }
 });
