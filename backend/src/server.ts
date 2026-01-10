@@ -13,32 +13,15 @@ import {
 const app = express();
 const prisma = new PrismaClient();
 
-// сюда добавляем все фронтовые домены
-const allowedOrigins = [
-  "http://localhost:3000",
-  "https://tattopro-web-7iem.vercel.app",
-  "https://tattopro-web-7iem-9b0dln8o7-vel-droids-projects.vercel.app",
-  "https://tattopro-web-7iem-1fw31q623-vel-droids-projects.vercel.app",
-];
-
+// CORS — разрешаем всех
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // запросы без Origin (Postman, curl) пропускаем
-      if (!origin) {
-        return callback(null, true);
-      }
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-      return callback(new Error("Not allowed by CORS"));
-    },
+    origin: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   }),
 );
-app.options('*', cors());
 
 app.use(express.json());
 
