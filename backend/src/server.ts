@@ -1062,7 +1062,7 @@ app.delete("/api/inventory/:id", async (req, res) => {
 // ===== INVENTORY MOVEMENTS + REPORTS =====
 
 // Список движений
-app.get("/api/inventory-movements", async (req, res) => {
+app.get("/api/inventory/movements", async (req, res) => {
   try {
     const itemId = parseIntParam(req.query.itemId);
     const limit = parseIntParam(req.query.limit, 50) ?? 50;
@@ -1101,13 +1101,13 @@ app.get("/api/inventory-movements", async (req, res) => {
       }),
     );
   } catch (err) {
-    console.error("GET /api/inventory-movements error", err);
+    console.error("GET /api/inventory/movements error", err);
     res.status(500).json(fail("Failed to fetch inventory movements"));
   }
 });
 
 // Создать движение и обновить остаток
-app.post("/api/inventory-movements", async (req, res) => {
+app.post("/api/inventory/movements", async (req, res) => {
   try {
     const { itemId, type, quantity, reason } = req.body as {
       itemId?: number;
@@ -1161,7 +1161,7 @@ app.post("/api/inventory-movements", async (req, res) => {
 
     res.status(201).json(ok(result));
   } catch (err: any) {
-    console.error("POST /api/inventory-movements error", err);
+    console.error("POST /api/inventory/movements error", err);
     const message =
       err?.message === "Inventory item not found" ||
       err?.message === "Resulting quantity cannot be negative"
