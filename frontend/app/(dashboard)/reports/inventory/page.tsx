@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { InventoryApi } from "../../../lib/api";
 import type {
   InventoryCategory,
-  InventoryOutReportResponse,
   InventoryMovement,
 } from "../../../lib/types";
 
@@ -36,6 +35,12 @@ function formatDate(value: string | Date) {
   });
 }
 
+type InventoryWriteoffRow = {
+  category: InventoryCategory;
+  totalQuantity: number;
+  approxCost: number | null;
+};
+
 export default function InventoryReportPage() {
   const [from, setFrom] = useState<string>(() => {
     const d = new Date();
@@ -50,8 +55,8 @@ export default function InventoryReportPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // исправление: отчёт теперь массив, а не один объект
-  const [report, setReport] = useState<InventoryOutReportResponse[]>([]);
+  // Исправлено: report теперь массив категорий
+  const [report, setReport] = useState<InventoryWriteoffRow[]>([]);
   const [movements, setMovements] = useState<InventoryMovement[]>([]);
 
   const loadData = async () => {
@@ -66,14 +71,17 @@ export default function InventoryReportPage() {
     try {
       const [outReport, movementPage] = await Promise.all([
         InventoryApi.getOutReport({ from, to }),
-        // исправление: getMovements не принимает from/to
         InventoryApi.getMovements({ limit: 200, offset: 0 }),
       ]);
 
-      setReport(outReport);
-      // берём только OUT-движения для детализации
+      // Исправлено: извлекаем массив items из объекта ответа
+      const items = (outReport as any)?.items || [];
+      setReport(items);
+
+      // Исправлено: извлекаем items из movementPage
+      const allMovements = (movementPage as any)?.items || [];
       setMovements(
-        (movementPage as any[]).filter((m) => (m as any).type === "OUT"),
+        allMovements.filter((m: any) => m.type === "OUT"),
       );
     } catch (e: any) {
       console.error(e);
@@ -90,8 +98,8 @@ export default function InventoryReportPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const items = report ?? [];
-  const totalApproxCost = items.reduce((sum, row: any) => {
+  const items = report || [];
+  const totalApproxCost = items.reduce((sum, row) => {
     const cost = row.approxCost ?? 0;
     return sum + (typeof cost === "number" ? cost : 0);
   }, 0);
@@ -163,7 +171,7 @@ export default function InventoryReportPage() {
         <h2 className="text-lg font-semibold">Списания по категориям</h2>
         {items.length === 0 ? (
           <div className="rounded border border-dashed bg-white px-4 py-4 text-sm text-gray-500">
-            Списаний по складу за выбранный период не было. :(
+            Списаний по складу за выбранный период не было.
           </div>
         ) : (
           <div className="overflow-x-auto rounded border bg-white">
@@ -213,7 +221,7 @@ export default function InventoryReportPage() {
 
         {movements.length === 0 ? (
           <div className="rounded border border-dashed bg-white px-4 py-4 text-sm text-gray-500">
-            Движений расхода за выбранный период не найдено. :(
+            Движений расхода за выбранный период не найдено.
           </div>
         ) : (
           <div className="overflow-x-auto rounded border bg-white">
