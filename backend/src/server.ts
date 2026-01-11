@@ -1173,7 +1173,7 @@ app.post("/api/inventory/movements", async (req, res) => {
 
 // ===== INVENTORY OUT REPORT (COGS) =====
 // Сводный отчёт по списаниям (OUT) по категориям за период
-app.get("/api/reports/inventory-out", async (req, res) => {
+app.get("/api/inventory/out-report", async (req, res) => {
   try {
     const from = parseDateParam(req.query.from);
     const to = parseDateRangeEnd(req.query.to);
@@ -1258,7 +1258,7 @@ app.get("/api/reports/inventory-out", async (req, res) => {
       }),
     );
   } catch (err) {
-    console.error("GET /api/reports/inventory-out error", err);
+    console.error("GET /api/inventory/out-report error", err);
     res.status(500).json(fail("Failed to fetch inventory out report"));
   }
 });
@@ -2740,7 +2740,7 @@ app.get("/api/reports/revenue", async (req, res) => {
 });
 
 // === REPORT: SERVICES REVENUE ===
-app.get("/api/reports/services", async (req, res) => {
+app.get("/api/reports/services-revenue", async (req, res) => {
   try {
     const { from, to, masterId, serviceCategory } = req.query || {};
 
@@ -2883,7 +2883,7 @@ app.get("/api/reports/services", async (req, res) => {
       }),
     );
   } catch (err) {
-    console.error("GET /api/reports/services error", err);
+    console.error("GET /api/reports/services-revenue error", err);
     res.status(500).json(fail("Failed to fetch services revenue report"));
   }
 });
