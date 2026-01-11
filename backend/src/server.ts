@@ -2077,7 +2077,7 @@ app.get("/api/stats/clients-dashboard", async (req, res) => {
 });
 
 // ===== MASTER UTILIZATION STATS =====
-app.get("/api/stats/master-utilization", async (req, res) => {
+app.get("/api/reports/master-utilization", async (req, res) => {
   try {
     const from = parseDateParam(req.query.from);
     const to = parseDateRangeEnd(req.query.to);
@@ -2226,7 +2226,7 @@ app.get("/api/stats/master-utilization", async (req, res) => {
       }),
     );
   } catch (err) {
-    console.error("GET /api/stats/master-utilization error", err);
+    console.error("GET /api/reports/master-utilization error", err);
     res.status(500).json(fail("Failed to fetch master utilization stats"));
   }
 });
