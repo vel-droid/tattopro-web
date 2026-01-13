@@ -477,4 +477,3 @@ export const InventoryApi = {
 
       const response = await fetch(
         `${BASE_URL}/api/inventory/out-report?${queryParams.toString()}`,
-        {
