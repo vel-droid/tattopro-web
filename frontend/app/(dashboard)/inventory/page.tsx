@@ -76,7 +76,14 @@ export default function InventoryPage() {
       const data = await InventoryApi.getAll();
       setItems(data);
     } catch (e: any) {
-      setError(e.message ?? "Не удалось загрузить склад");
+      console.error("Inventory loading error:", e);
+      setError(
+        e instanceof Error
+          ? e.message
+          : typeof e === "string"
+          ? e
+          : "Не удалось загрузить склад"
+      );
     } finally {
       setLoading(false);
     }
@@ -93,9 +100,13 @@ export default function InventoryPage() {
       // здесь важное исправление: getMovements возвращает массив, а не { items }
       setMovements(data);
     } catch (e: any) {
+      console.error("Movements loading error:", e);
       pushToast({
         type: "error",
-        message: e.message ?? "Не удалось загрузить движения по складу",
+        message:
+          e instanceof Error
+            ? e.message
+            : "Не удалось загрузить движения по складу",
       });
     } finally {
       setMovementsLoading(false);
@@ -139,6 +150,9 @@ export default function InventoryPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+
+    // логирование формы перед первой валидацией
+    console.log("Form data:", form);
 
     if (!form.name.trim()) {
       pushToast({
@@ -207,7 +221,7 @@ export default function InventoryPage() {
       } else {
         const updated = await InventoryApi.update(editingId, payload);
         setItems((prev) =>
-          prev.map((i) => (i.id === updated.id ? updated : i)),
+          prev.map((i) => (i.id === updated.id ? updated : i))
         );
         if (selectedItem && selectedItem.id === updated.id) {
           setSelectedItem(updated);
@@ -240,7 +254,7 @@ export default function InventoryPage() {
         isActive: !item.isActive,
       });
       setItems((prev) =>
-        prev.map((i) => (i.id === updated.id ? updated : i)),
+        prev.map((i) => (i.id === updated.id ? updated : i))
       );
       if (selectedItem && selectedItem.id === updated.id) {
         setSelectedItem(updated);
@@ -289,7 +303,7 @@ export default function InventoryPage() {
       });
 
       setItems((prev) =>
-        prev.map((i) => (i.id === result.item.id ? result.item : i)),
+        prev.map((i) => (i.id === result.item.id ? result.item : i))
       );
       if (selectedItem && selectedItem.id === item.id) {
         setSelectedItem(result.item);
@@ -332,7 +346,7 @@ export default function InventoryPage() {
       });
 
       setItems((prev) =>
-        prev.map((i) => (i.id === result.item.id ? result.item : i)),
+        prev.map((i) => (i.id === result.item.id ? result.item : i))
       );
       setSelectedItem(result.item);
       setMovements((prev) => [result.movement, ...prev]);
@@ -357,12 +371,12 @@ export default function InventoryPage() {
       selectedCategory === "ALL"
         ? items
         : items.filter((i) => i.category === selectedCategory),
-    [items, selectedCategory],
+    [items, selectedCategory]
   );
 
   const totalItems = items.length;
   const lowStockCount = items.filter(
-    (i) => i.quantity > 0 && i.quantity <= i.minQuantity,
+    (i) => i.quantity > 0 && i.quantity <= i.minQuantity
   ).length;
   const outOfStockCount = items.filter((i) => i.quantity === 0).length;
 
@@ -516,7 +530,7 @@ export default function InventoryPage() {
               onChange={(e) =>
                 handleFormChange(
                   "category",
-                  e.target.value as InventoryCategory,
+                  e.target.value as InventoryCategory
                 )
               }
               className="mt-1 block w-full rounded-md border px-2 py-1 text-sm"
@@ -583,7 +597,7 @@ export default function InventoryPage() {
       )}
 
       {/* Таблица склада */}
-      <section className="rounded-lg border bg-white p-4 shadow-sm">
+      <section className="rounded-lg border bg_WHITE p-4 shadow-sm bg-white">
         <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <h2 className="text-lg font-medium">Все позиции</h2>
           <div className="flex items-center gap-2">
@@ -594,7 +608,7 @@ export default function InventoryPage() {
               value={selectedCategory}
               onChange={(e) =>
                 setSelectedCategory(
-                  (e.target.value as InventoryCategory | "ALL") || "ALL",
+                  (e.target.value as InventoryCategory | "ALL") || "ALL"
                 )
               }
               className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -623,7 +637,7 @@ export default function InventoryPage() {
         </div>
 
         {!hasFilteredItems && !loading ? (
-          <div className="rounded border border-dashed bg-white px-4 py-6 text-sm text-gray-500">
+          <div className="rounded border border-dashed bg_WHITE px-4 py-6 text-sm text-gray-500 bg-white">
             Пока нет позиций на складе. Добавьте первую через форму выше.
           </div>
         ) : (
@@ -817,7 +831,7 @@ export default function InventoryPage() {
                   value={movementQuantity}
                   onChange={(e) =>
                     setMovementQuantity(
-                      e.target.value === "" ? "" : Number(e.target.value),
+                      e.target.value === "" ? "" : Number(e.target.value)
                     )
                   }
                 />
