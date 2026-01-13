@@ -477,3 +477,151 @@ export const InventoryApi = {
 
       const response = await fetch(
         `${BASE_URL}/api/inventory/out-report?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      const data =
+        await handleResponse<ApiResponse<InventoryOutReportResponse[]>>(
+          response
+        );
+      return data.data || [];
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to fetch out report"
+      );
+    }
+  },
+};
+
+// ===== SERVICE API =====
+export const ServiceApi = {
+  async getAll(): Promise<Service[]> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/services`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await handleResponse<ApiResponse<Service[]>>(response);
+      return data.data || [];
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to fetch services"
+      );
+    }
+  },
+
+  async update(
+    id: string | number,
+    serviceData: Partial<Service>
+  ): Promise<Service> {
+    try {
+      const response = await fetch(`${BASE_URL}/api/services/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(serviceData),
+      });
+      const data = await handleResponse<ApiResponse<Service>>(response);
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to update service"
+      );
+    }
+  },
+};
+
+// ===== REPORTS / FINANCE API =====
+export const ReportsApi = {
+  // Общий отчёт по выручке
+  async getRevenueReport(params: {
+    from: string;
+    to: string;
+  }): Promise<RevenueReportResponse> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.from) queryParams.append("from", params.from);
+      if (params.to) queryParams.append("to", params.to);
+
+      const response = await fetch(
+        `${BASE_URL}/api/reports/revenue?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      const data =
+        await handleResponse<ApiResponse<RevenueReportResponse>>(response);
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch revenue report"
+      );
+    }
+  },
+
+  // Отчёт по выручке по услугам
+  async getServicesRevenueReport(params: {
+    from: string;
+    to: string;
+  }): Promise<ServicesRevenueReportResponse> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.from) queryParams.append("from", params.from);
+      if (params.to) queryParams.append("to", params.to);
+
+      const response = await fetch(
+        `${BASE_URL}/api/reports/services-revenue?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      const data =
+        await handleResponse<ApiResponse<ServicesRevenueReportResponse>>(
+          response
+        );
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch services revenue report"
+      );
+    }
+  },
+
+  // Отчёт по загрузке мастеров
+  async getMasterUtilization(params: {
+    from: string;
+    to: string;
+  }): Promise<MasterUtilizationResponse> {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params.from) queryParams.append("from", params.from);
+      if (params.to) queryParams.append("to", params.to);
+
+      const response = await fetch(
+        `${BASE_URL}/api/reports/master-utilization?${queryParams.toString()}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      const data =
+        await handleResponse<ApiResponse<MasterUtilizationResponse>>(
+          response
+        );
+      return data.data;
+    } catch (error) {
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch master utilization report"
+      );
+    }
+  },
+};
