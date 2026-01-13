@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function ReportsPage() {
+export default async function ReportsPage() {
   redirect("/reports/overview");
 }
